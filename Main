@@ -1,13 +1,19 @@
 -- ================================================================
---  RUSHACK GUI v2 | РўРѕС‡РЅР°СЏ РєРѕРїРёСЏ С„РѕС‚Рѕ | 390x270px
+--  SINYXWARE GUI v2 | Увеличен на 20% | ESP встроен
 -- ================================================================
 
 local UIS    = game:GetService("UserInputService")
 local TS     = game:GetService("TweenService")
 local CG     = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LP = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+if not Drawing then error("Drawing не поддерживается") end
 
 -- ================================================================
---  Р¦Р’Р•РўРђ
+--  ЦВЕТА
 -- ================================================================
 local C = {
     bg       = Color3.fromRGB(18, 12, 12),
@@ -22,23 +28,26 @@ local C = {
     white    = Color3.fromRGB(255, 255, 255),
     border   = Color3.fromRGB(50,  28,  28),
     togOff   = Color3.fromRGB(60,  38,  38),
+    blue     = Color3.fromRGB(0, 191, 255),
 }
 
--- СЂР°Р·РјРµСЂС‹ (РїРѕР»РѕРІРёРЅР° РѕС‚ РѕСЂРёРіРёРЅР°Р»Р° 780x540)
-local W, H = 390, 270
-local SW    = 90   -- С€РёСЂРёРЅР° СЃР°Р№РґР±Р°СЂР°
+-- размеры ×1.2
+local W, H = 390 * 1.2, 270 * 1.2  -- 468x324
+local SW    = 90 * 1.2             -- 108
 
 -- ================================================================
 --  ROOT GUI
 -- ================================================================
-pcall(function() CG:FindFirstChild("RusHack"):Destroy() end)
+pcall(function() CG:FindFirstChild("SinyxWare"):Destroy() end)
 
 local Root = Instance.new("ScreenGui")
-Root.Name = "RusHack"; Root.ResetOnSpawn = false
-Root.IgnoreGuiInset = true; Root.ZIndexBehavior = Enum.ZIndexBehavior.Global
+Root.Name = "SinyxWare"
+Root.ResetOnSpawn = false
+Root.IgnoreGuiInset = true
+Root.ZIndexBehavior = Enum.ZIndexBehavior.Global
 Root.Parent = CG
 
--- РљСЂР°СЃРЅР°СЏ РІРЅРµС€РЅСЏСЏ СЂР°РјРєР°
+-- Красная внешняя рамка
 local Outer = Instance.new("Frame", Root)
 Outer.Size     = UDim2.new(0, W, 0, H)
 Outer.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
@@ -46,7 +55,7 @@ Outer.BackgroundColor3 = C.red
 Outer.BorderSizePixel  = 0
 Instance.new("UICorner", Outer).CornerRadius = UDim.new(0, 4)
 
--- Р“Р»Р°РІРЅРѕРµ РѕРєРЅРѕ
+-- Главное окно
 local Main = Instance.new("Frame", Outer)
 Main.Size     = UDim2.new(1, -4, 1, -4)
 Main.Position = UDim2.new(0, 2, 0, 2)
@@ -56,7 +65,7 @@ Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
 -- ================================================================
---  DRAG (Р·Р° РІРµСЃСЊ Main)
+--  DRAG (за весь Main)
 -- ================================================================
 local drag, dstart, ostart = false, nil, nil
 Main.InputBegan:Connect(function(i)
@@ -80,47 +89,46 @@ UIS.InputChanged:Connect(function(i)
 end)
 
 -- ================================================================
---  РЎРђР™Р”Р‘РђР 
+--  САЙДБАР
 -- ================================================================
 local Sidebar = Instance.new("Frame", Main)
 Sidebar.Size = UDim2.new(0, SW, 1, 0)
 Sidebar.BackgroundColor3 = C.sidebar
 Sidebar.BorderSizePixel  = 0
 
--- Р Р°Р·РґРµР»РёС‚РµР»СЊ
 local SDiv = Instance.new("Frame", Main)
 SDiv.Size = UDim2.new(0, 1, 1, 0)
 SDiv.Position = UDim2.new(0, SW, 0, 0)
 SDiv.BackgroundColor3 = C.border
 SDiv.BorderSizePixel  = 0
 
--- Р—Р°РіРѕР»РѕРІРѕРє "RusHack"
+-- Заголовок "SinyxWare" (синий + красный)
 local TitleF = Instance.new("Frame", Sidebar)
-TitleF.Size = UDim2.new(1, 0, 0, 26)
+TitleF.Size = UDim2.new(1, 0, 0, 26 * 1.2)
 TitleF.BackgroundTransparency = 1
 
 local TitleL = Instance.new("TextLabel", TitleF)
 TitleL.Size = UDim2.new(1, 0, 1, 0)
 TitleL.BackgroundTransparency = 1
 TitleL.RichText = true
-TitleL.Text = '<font color="rgb(218,212,212)">Rus</font><font color="rgb(210,30,30)">Hack</font>'
+TitleL.Text = '<font color="rgb(0,191,255)">Sinyx</font><font color="rgb(210,30,30)">Ware</font>'
 TitleL.Font = Enum.Font.GothamBold
-TitleL.TextSize = 10
+TitleL.TextSize = 12 * 1.2
 TitleL.TextXAlignment = Enum.TextXAlignment.Center
 
--- Р Р°Р·РґРµР»РёС‚РµР»СЊ
+-- Разделитель
 local TDiv = Instance.new("Frame", Sidebar)
 TDiv.Size = UDim2.new(1, 0, 0, 1)
-TDiv.Position = UDim2.new(0, 0, 0, 26)
+TDiv.Position = UDim2.new(0, 0, 0, 26 * 1.2)
 TDiv.BackgroundColor3 = C.border
 TDiv.BorderSizePixel  = 0
 
--- РўР°Р±С‹
+-- Табы
 local TABS = {
-    { n = "Combat",  ico = "вњ–" },
-    { n = "Visuals", ico = "в—Ћ" },
-    { n = "Misc",    ico = "в—‰" },
-    { n = "Config",  ico = "в‰Ў" },
+    { n = "Combat",  ico = "✖" },
+    { n = "Visuals", ico = "◎" },
+    { n = "Misc",    ico = "◉" },
+    { n = "Config",  ico = "≡" },
 }
 
 local TabBtns = {}
@@ -128,8 +136,8 @@ local currentTab = "Combat"
 local TabContents = {}
 
 local NavF = Instance.new("Frame", Sidebar)
-NavF.Size = UDim2.new(1, 0, 1, -28)
-NavF.Position = UDim2.new(0, 0, 0, 28)
+NavF.Size = UDim2.new(1, 0, 1, -(26 * 1.2))
+NavF.Position = UDim2.new(0, 0, 0, 26 * 1.2)
 NavF.BackgroundTransparency = 1
 
 local NavL = Instance.new("UIListLayout", NavF)
@@ -151,7 +159,7 @@ end
 
 for i, tab in ipairs(TABS) do
     local btn = Instance.new("TextButton", NavF)
-    btn.Size = UDim2.new(1, 0, 0, 22)
+    btn.Size = UDim2.new(1, 0, 0, 22 * 1.2)
     btn.BackgroundTransparency = 1
     btn.Text = ""
     btn.AutoButtonColor = false
@@ -166,21 +174,21 @@ for i, tab in ipairs(TABS) do
     Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 1)
 
     local ico = Instance.new("TextLabel", btn)
-    ico.Size = UDim2.new(0, 18, 1, 0)
-    ico.Position = UDim2.new(0, 8, 0, 0)
+    ico.Size = UDim2.new(0, 18 * 1.2, 1, 0)
+    ico.Position = UDim2.new(0, 8 * 1.2, 0, 0)
     ico.BackgroundTransparency = 1
     ico.Text = tab.ico
     ico.Font = Enum.Font.GothamBold
-    ico.TextSize = 8
+    ico.TextSize = 8 * 1.2
     ico.TextColor3 = tab.n == "Combat" and C.red or C.dim
 
     local lbl = Instance.new("TextLabel", btn)
-    lbl.Size = UDim2.new(1, -28, 1, 0)
-    lbl.Position = UDim2.new(0, 26, 0, 0)
+    lbl.Size = UDim2.new(1, -(28 * 1.2), 1, 0)
+    lbl.Position = UDim2.new(0, 26 * 1.2, 0, 0)
     lbl.BackgroundTransparency = 1
     lbl.Text = tab.n
     lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 7
+    lbl.TextSize = 7 * 1.2
     lbl.TextColor3 = tab.n == "Combat" and C.white or C.dim
     lbl.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -190,102 +198,97 @@ for i, tab in ipairs(TABS) do
 end
 
 -- ================================================================
---  РљРћРќРўР•РќРў
+--  КОНТЕНТ
 -- ================================================================
 local ContentArea = Instance.new("Frame", Main)
-ContentArea.Size = UDim2.new(1, -SW-1, 1, -14)
+ContentArea.Size = UDim2.new(1, -SW-1, 1, -(14 * 1.2))
 ContentArea.Position = UDim2.new(0, SW+1, 0, 0)
 ContentArea.BackgroundTransparency = 1
 ContentArea.ClipsDescendants = true
 
--- РўРѕРїР±Р°СЂ РїРѕРёСЃРє
+-- Топбар поиск
 local TopBar = Instance.new("Frame", ContentArea)
-TopBar.Size = UDim2.new(1, 0, 0, 21)
+TopBar.Size = UDim2.new(1, 0, 0, 21 * 1.2)
 TopBar.BackgroundColor3 = C.sidebar
 TopBar.BorderSizePixel  = 0
 
 local SearchIco = Instance.new("TextLabel", TopBar)
-SearchIco.Size = UDim2.new(0, 14, 1, 0)
-SearchIco.Position = UDim2.new(0, 4, 0, 0)
+SearchIco.Size = UDim2.new(0, 14 * 1.2, 1, 0)
+SearchIco.Position = UDim2.new(0, 4 * 1.2, 0, 0)
 SearchIco.BackgroundTransparency = 1
-SearchIco.Text = "рџ”Ќ"; SearchIco.TextSize = 7
+SearchIco.Text = "🔍"
+SearchIco.TextSize = 7 * 1.2
 SearchIco.TextColor3 = C.dim
 
 local SearchBox = Instance.new("TextBox", TopBar)
-SearchBox.Size = UDim2.new(1, -40, 1, -4)
-SearchBox.Position = UDim2.new(0, 20, 0, 2)
+SearchBox.Size = UDim2.new(1, -(40 * 1.2), 1, -(4 * 1.2))
+SearchBox.Position = UDim2.new(0, 20 * 1.2, 0, 2 * 1.2)
 SearchBox.BackgroundTransparency = 1
-SearchBox.Text = ""; SearchBox.PlaceholderText = "Search"
+SearchBox.Text = ""
+SearchBox.PlaceholderText = "Search"
 SearchBox.PlaceholderColor3 = C.dim
 SearchBox.TextColor3 = C.text
-SearchBox.Font = Enum.Font.Gotham; SearchBox.TextSize = 7
+SearchBox.Font = Enum.Font.Gotham
+SearchBox.TextSize = 7 * 1.2
 SearchBox.TextXAlignment = Enum.TextXAlignment.Left
 SearchBox.BorderSizePixel = 0
 
 local MoveIco = Instance.new("TextLabel", TopBar)
-MoveIco.Size = UDim2.new(0, 14, 0, 14)
-MoveIco.Position = UDim2.new(1, -17, 0.5, -7)
+MoveIco.Size = UDim2.new(0, 14 * 1.2, 0, 14 * 1.2)
+MoveIco.Position = UDim2.new(1, -(17 * 1.2), 0.5, -(7 * 1.2))
 MoveIco.BackgroundColor3 = C.section
-MoveIco.Text = "вњ›"; MoveIco.TextSize = 7
-MoveIco.TextColor3 = C.dim; MoveIco.Font = Enum.Font.GothamBold
+MoveIco.Text = "✛"
+MoveIco.TextSize = 7 * 1.2
+MoveIco.TextColor3 = C.dim
+MoveIco.Font = Enum.Font.GothamBold
 MoveIco.BorderSizePixel = 0
 Instance.new("UICorner", MoveIco).CornerRadius = UDim.new(0, 2)
 
 local TopDiv = Instance.new("Frame", ContentArea)
 TopDiv.Size = UDim2.new(1, 0, 0, 1)
-TopDiv.Position = UDim2.new(0, 0, 0, 21)
+TopDiv.Position = UDim2.new(0, 0, 0, 21 * 1.2)
 TopDiv.BackgroundColor3 = C.border
 TopDiv.BorderSizePixel  = 0
 
--- РќРёР¶РЅСЏСЏ СЃС‚СЂРѕРєР° "Rusted"
-local BotBar = Instance.new("Frame", Main)
-BotBar.Size = UDim2.new(1, -SW, 0, 14)
-BotBar.Position = UDim2.new(0, SW, 1, -14)
-BotBar.BackgroundColor3 = C.sidebar
-BotBar.BorderSizePixel  = 0
-
-local BotDiv = Instance.new("Frame", Main)
-BotDiv.Size = UDim2.new(1, -SW, 0, 1)
-BotDiv.Position = UDim2.new(0, SW, 1, -15)
-BotDiv.BackgroundColor3 = C.border; BotDiv.BorderSizePixel = 0
-
-local BotLbl = Instance.new("TextLabel", BotBar)
-BotLbl.Size = UDim2.new(1, 0, 1, 0)
-BotLbl.BackgroundTransparency = 1
-BotLbl.Text = "Rusted"; BotLbl.TextColor3 = C.dim
-BotLbl.Font = Enum.Font.Gotham; BotLbl.TextSize = 7
-BotLbl.TextXAlignment = Enum.TextXAlignment.Center
+-- ================================================================
+--  УБРАНА НАДПИСЬ "Rusted" — БОТБАР УДАЛЁН
+-- ================================================================
 
 -- ================================================================
---  РҐР•Р›РџР•Р Р«
+--  ХЕЛПЕРЫ
 -- ================================================================
 local function corner(f, r) Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2) end
 
--- РўРѕРіРіР» pill
-local function mkToggle(parent, label, default)
+-- Тоггл pill
+local function mkToggle(parent, label, default, callback)
     local row = Instance.new("Frame", parent)
-    row.Size = UDim2.new(1, 0, 0, 16)
+    row.Size = UDim2.new(1, 0, 0, 16 * 1.2)
     row.BackgroundTransparency = 1
 
     local lbl = Instance.new("TextLabel", row)
-    lbl.Size = UDim2.new(1, -30, 1, 0)
-    lbl.Position = UDim2.new(0, 5, 0, 0)
+    lbl.Size = UDim2.new(1, -(30 * 1.2), 1, 0)
+    lbl.Position = UDim2.new(0, 5 * 1.2, 0, 0)
     lbl.BackgroundTransparency = 1
-    lbl.Text = label; lbl.TextColor3 = C.text
-    lbl.Font = Enum.Font.Gotham; lbl.TextSize = 7
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 7 * 1.2
     lbl.TextXAlignment = Enum.TextXAlignment.Left
 
     local pill = Instance.new("TextButton", row)
-    pill.Size = UDim2.new(0, 22, 0, 12)
-    pill.Position = UDim2.new(1, -26, 0.5, -6)
+    pill.Size = UDim2.new(0, 22 * 1.2, 0, 12 * 1.2)
+    pill.Position = UDim2.new(1, -(26 * 1.2), 0.5, -(6 * 1.2))
     pill.BackgroundColor3 = default and C.red or C.togOff
-    pill.BorderSizePixel = 0; pill.Text = ""; pill.AutoButtonColor = false
+    pill.BorderSizePixel = 0
+    pill.Text = ""
+    pill.AutoButtonColor = false
     corner(pill, 6)
 
     local knob = Instance.new("Frame", pill)
-    knob.Size = UDim2.new(0, 8, 0, 8)
-    knob.Position = default and UDim2.new(1,-10,0.5,-4) or UDim2.new(0,2,0.5,-4)
-    knob.BackgroundColor3 = C.white; knob.BorderSizePixel = 0
+    knob.Size = UDim2.new(0, 8 * 1.2, 0, 8 * 1.2)
+    knob.Position = default and UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2)) or UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))
+    knob.BackgroundColor3 = C.white
+    knob.BorderSizePixel = 0
     corner(knob, 4)
 
     local val = default
@@ -293,81 +296,42 @@ local function mkToggle(parent, label, default)
         val = not val
         TS:Create(pill, TweenInfo.new(0.12), { BackgroundColor3 = val and C.red or C.togOff }):Play()
         TS:Create(knob, TweenInfo.new(0.12), {
-            Position = val and UDim2.new(1,-10,0.5,-4) or UDim2.new(0,2,0.5,-4)
+            Position = val and UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2)) or UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))
         }):Play()
+        if callback then callback(val) end
     end)
     return row
 end
 
--- Р¦РІРµС‚РЅРѕР№ РєРІР°РґСЂР°С‚РёРє РїРµСЂРµРґ С‚РѕРіРіР»РѕРј (РєР°Рє РЅР° С„РѕС‚Рѕ РІ Aiming СЃРµРєС†РёРё)
-local function mkToggleColor(parent, label, default)
-    local row = Instance.new("Frame", parent)
-    row.Size = UDim2.new(1, 0, 0, 16)
-    row.BackgroundTransparency = 1
-
-    local lbl = Instance.new("TextLabel", row)
-    lbl.Size = UDim2.new(1, -48, 1, 0)
-    lbl.Position = UDim2.new(0, 5, 0, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = label; lbl.TextColor3 = C.text
-    lbl.Font = Enum.Font.Gotham; lbl.TextSize = 7
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    -- РјР°Р»РµРЅСЊРєРёР№ С†РІРµС‚РЅРѕР№ РєРІР°РґСЂР°С‚ РїРµСЂРµРґ РїРёР»Р»РѕРј
-    local sq = Instance.new("Frame", row)
-    sq.Size = UDim2.new(0, 9, 0, 9)
-    sq.Position = UDim2.new(1, -48, 0.5, -4)
-    sq.BackgroundColor3 = C.section; sq.BorderSizePixel = 0
-    corner(sq, 1)
-
-    local pill = Instance.new("TextButton", row)
-    pill.Size = UDim2.new(0, 22, 0, 12)
-    pill.Position = UDim2.new(1, -24, 0.5, -6)
-    pill.BackgroundColor3 = default and C.red or C.togOff
-    pill.BorderSizePixel = 0; pill.Text = ""; pill.AutoButtonColor = false
-    corner(pill, 6)
-
-    local knob = Instance.new("Frame", pill)
-    knob.Size = UDim2.new(0, 8, 0, 8)
-    knob.Position = default and UDim2.new(1,-10,0.5,-4) or UDim2.new(0,2,0.5,-4)
-    knob.BackgroundColor3 = C.white; knob.BorderSizePixel = 0
-    corner(knob, 4)
-
-    local val = default
-    pill.MouseButton1Click:Connect(function()
-        val = not val
-        TS:Create(pill, TweenInfo.new(0.12), { BackgroundColor3 = val and C.red or C.togOff }):Play()
-        TS:Create(knob, TweenInfo.new(0.12), {
-            Position = val and UDim2.new(1,-10,0.5,-4) or UDim2.new(0,2,0.5,-4)
-        }):Play()
-    end)
-    return row
-end
-
--- РЎР»Р°Р№РґРµСЂ (РєСЂР°СЃРЅР°СЏ Р·Р°РїРѕР»РЅРµРЅРЅР°СЏ РїРѕР»РѕСЃР° СЃ С‚РµРєСЃС‚РѕРј РІРЅСѓС‚СЂРё)
-local function mkSlider(parent, label, mn, mx, def)
+-- Слайдер с реальным вводом
+local function mkSlider(parent, label, mn, mx, def, callback)
     local wrap = Instance.new("Frame", parent)
-    wrap.Size = UDim2.new(1, 0, 0, 26)
+    wrap.Size = UDim2.new(1, 0, 0, 26 * 1.2)
     wrap.BackgroundTransparency = 1
 
     local lbl = Instance.new("TextLabel", wrap)
-    lbl.Size = UDim2.new(1, -5, 0, 11)
-    lbl.Position = UDim2.new(0, 5, 0, 1)
+    lbl.Size = UDim2.new(1, -(5 * 1.2), 0, 11 * 1.2)
+    lbl.Position = UDim2.new(0, 5 * 1.2, 0, 1 * 1.2)
     lbl.BackgroundTransparency = 1
-    lbl.Text = label; lbl.TextColor3 = C.text
-    lbl.Font = Enum.Font.Gotham; lbl.TextSize = 7
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 7 * 1.2
     lbl.TextXAlignment = Enum.TextXAlignment.Left
 
     local track = Instance.new("TextButton", wrap)
-    track.Size = UDim2.new(1, -10, 0, 12)
-    track.Position = UDim2.new(0, 5, 0, 13)
+    track.Size = UDim2.new(1, -(10 * 1.2), 0, 12 * 1.2)
+    track.Position = UDim2.new(0, 5 * 1.2, 0, 13 * 1.2)
     track.BackgroundColor3 = C.redDark
-    track.BorderSizePixel = 0; track.Text = ""; track.AutoButtonColor = false
+    track.BorderSizePixel = 0
+    track.Text = ""
+    track.AutoButtonColor = false
     corner(track, 2)
 
     local fill = Instance.new("Frame", track)
     fill.Size = UDim2.new((def-mn)/(mx-mn), 0, 1, 0)
-    fill.BackgroundColor3 = C.red; fill.BorderSizePixel = 0
+    fill.BackgroundColor3 = C.red
+    fill.BorderSizePixel = 0
     corner(fill, 2)
 
     local valLbl = Instance.new("TextLabel", track)
@@ -375,7 +339,8 @@ local function mkSlider(parent, label, mn, mx, def)
     valLbl.BackgroundTransparency = 1
     valLbl.Text = ("%g/%g"):format(def, mx)
     valLbl.TextColor3 = C.white
-    valLbl.Font = Enum.Font.GothamBold; valLbl.TextSize = 7
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.TextSize = 7 * 1.2
     valLbl.ZIndex = 3
 
     local val = def
@@ -387,11 +352,13 @@ local function mkSlider(parent, label, mn, mx, def)
         val = math.floor(mn + (mx - mn) * pct + 0.5)
         fill.Size = UDim2.new(pct, 0, 1, 0)
         valLbl.Text = ("%g/%g"):format(val, mx)
+        if callback then callback(val) end
     end
 
     track.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then
-            sliding = true; upd(i.Position.X)
+            sliding = true
+            upd(i.Position.X)
         end
     end)
     UIS.InputChanged:Connect(function(i)
@@ -406,43 +373,49 @@ local function mkSlider(parent, label, mn, mx, def)
     return wrap
 end
 
--- Р”СЂРѕРїРґР°СѓРЅ
+-- Дропдаун
 local function mkDropdown(parent, label, options, default)
     local wrap = Instance.new("Frame", parent)
-    wrap.Size = UDim2.new(1, 0, 0, 28)
+    wrap.Size = UDim2.new(1, 0, 0, 28 * 1.2)
     wrap.BackgroundTransparency = 1
 
     local lbl = Instance.new("TextLabel", wrap)
-    lbl.Size = UDim2.new(1, -5, 0, 11)
-    lbl.Position = UDim2.new(0, 5, 0, 1)
+    lbl.Size = UDim2.new(1, -(5 * 1.2), 0, 11 * 1.2)
+    lbl.Position = UDim2.new(0, 5 * 1.2, 0, 1 * 1.2)
     lbl.BackgroundTransparency = 1
-    lbl.Text = label; lbl.TextColor3 = C.text
-    lbl.Font = Enum.Font.Gotham; lbl.TextSize = 7
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 7 * 1.2
     lbl.TextXAlignment = Enum.TextXAlignment.Left
 
     local btn = Instance.new("TextButton", wrap)
-    btn.Size = UDim2.new(1, -10, 0, 14)
-    btn.Position = UDim2.new(0, 5, 0, 13)
+    btn.Size = UDim2.new(1, -(10 * 1.2), 0, 14 * 1.2)
+    btn.Position = UDim2.new(0, 5 * 1.2, 0, 13 * 1.2)
     btn.BackgroundColor3 = C.section
-    btn.BorderSizePixel = 0; btn.AutoButtonColor = false
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
     corner(btn, 2)
 
     local cur = Instance.new("TextLabel", btn)
-    cur.Size = UDim2.new(1, -16, 1, 0)
-    cur.Position = UDim2.new(0, 5, 0, 0)
+    cur.Size = UDim2.new(1, -(16 * 1.2), 1, 0)
+    cur.Position = UDim2.new(0, 5 * 1.2, 0, 0)
     cur.BackgroundTransparency = 1
-    cur.Text = default; cur.TextColor3 = C.text
-    cur.Font = Enum.Font.Gotham; cur.TextSize = 7
+    cur.Text = default
+    cur.TextColor3 = C.text
+    cur.Font = Enum.Font.Gotham
+    cur.TextSize = 7 * 1.2
     cur.TextXAlignment = Enum.TextXAlignment.Left
 
     local arr = Instance.new("TextLabel", btn)
-    arr.Size = UDim2.new(0, 12, 1, 0)
-    arr.Position = UDim2.new(1, -14, 0, 0)
+    arr.Size = UDim2.new(0, 12 * 1.2, 1, 0)
+    arr.Position = UDim2.new(1, -(14 * 1.2), 0, 0)
     arr.BackgroundTransparency = 1
-    arr.Text = "в€§"; arr.TextColor3 = C.dim
-    arr.Font = Enum.Font.GothamBold; arr.TextSize = 6
+    arr.Text = "∧"
+    arr.TextColor3 = C.dim
+    arr.Font = Enum.Font.GothamBold
+    arr.TextSize = 6 * 1.2
 
-    -- РїСЂРѕСЃС‚РѕРµ РїРµСЂРµРєР»СЋС‡РµРЅРёРµ РїРѕ РєР»РёРєСѓ
     local idx = 1
     for i, v in ipairs(options) do if v == default then idx = i end end
     btn.MouseButton1Click:Connect(function()
@@ -453,68 +426,74 @@ local function mkDropdown(parent, label, options, default)
     return wrap
 end
 
--- РЎРµРєС†РёСЏ (Р·Р°РіРѕР»РѕРІРѕРє + С‚РµР»Рѕ)
+-- Секция
 local function mkSection(parent, title, lo)
     local wrap = Instance.new("Frame", parent)
-    wrap.Size = UDim2.new(1, -6, 0, 0)
+    wrap.Size = UDim2.new(1, -(6 * 1.2), 0, 0)
     wrap.AutomaticSize = Enum.AutomaticSize.Y
-    wrap.Position = UDim2.new(0, 3, 0, 0)
+    wrap.Position = UDim2.new(0, 3 * 1.2, 0, 0)
     wrap.BackgroundTransparency = 1
     wrap.LayoutOrder = lo or 1
 
     local hdr = Instance.new("Frame", wrap)
-    hdr.Size = UDim2.new(1, 0, 0, 17)
+    hdr.Size = UDim2.new(1, 0, 0, 17 * 1.2)
     hdr.BackgroundColor3 = C.section
     hdr.BorderSizePixel  = 0
     corner(hdr, 2)
 
     local htxt = Instance.new("TextLabel", hdr)
-    htxt.Size = UDim2.new(1, -22, 1, 0)
-    htxt.Position = UDim2.new(0, 6, 0, 0)
+    htxt.Size = UDim2.new(1, -(22 * 1.2), 1, 0)
+    htxt.Position = UDim2.new(0, 6 * 1.2, 0, 0)
     htxt.BackgroundTransparency = 1
-    htxt.Text = title; htxt.TextColor3 = C.text
-    htxt.Font = Enum.Font.GothamBold; htxt.TextSize = 7
+    htxt.Text = title
+    htxt.TextColor3 = C.text
+    htxt.Font = Enum.Font.GothamBold
+    htxt.TextSize = 7 * 1.2
     htxt.TextXAlignment = Enum.TextXAlignment.Left
 
     local chevron = Instance.new("TextButton", hdr)
-    chevron.Size = UDim2.new(0, 16, 1, 0)
-    chevron.Position = UDim2.new(1, -18, 0, 0)
+    chevron.Size = UDim2.new(0, 16 * 1.2, 1, 0)
+    chevron.Position = UDim2.new(1, -(18 * 1.2), 0, 0)
     chevron.BackgroundTransparency = 1
-    chevron.Text = "в€Ё"; chevron.TextColor3 = C.dim
-    chevron.Font = Enum.Font.GothamBold; chevron.TextSize = 8
+    chevron.Text = "∨"
+    chevron.TextColor3 = C.dim
+    chevron.Font = Enum.Font.GothamBold
+    chevron.TextSize = 8 * 1.2
     chevron.AutoButtonColor = false
 
     local body = Instance.new("Frame", wrap)
     body.Size = UDim2.new(1, 0, 0, 0)
     body.AutomaticSize = Enum.AutomaticSize.Y
-    body.Position = UDim2.new(0, 0, 0, 19)
+    body.Position = UDim2.new(0, 0, 0, 19 * 1.2)
     body.BackgroundColor3 = C.panel
     body.BorderSizePixel  = 0
     corner(body, 2)
 
     local bl = Instance.new("UIListLayout", body)
-    bl.Padding = UDim.new(0, 1); bl.SortOrder = Enum.SortOrder.LayoutOrder
+    bl.Padding = UDim.new(0, 1)
+    bl.SortOrder = Enum.SortOrder.LayoutOrder
 
     local bp = Instance.new("UIPadding", body)
-    bp.PaddingTop = UDim.new(0, 3); bp.PaddingBottom = UDim.new(0, 3)
+    bp.PaddingTop = UDim.new(0, 3 * 1.2)
+    bp.PaddingBottom = UDim.new(0, 3 * 1.2)
 
     local collapsed = false
     chevron.MouseButton1Click:Connect(function()
         collapsed = not collapsed
         body.Visible = not collapsed
-        chevron.Text = collapsed and ">" or "в€Ё"
+        chevron.Text = collapsed and ">" or "∨"
     end)
 
     return body
 end
 
 -- ================================================================
---  РЎРћР—Р”РђРЃРњ Р’РљР›РђР”РљР
+--  ВКЛАДКИ
 -- ================================================================
 local function mkTabContent(name)
     local f = Instance.new("ScrollingFrame", ContentArea)
-    f.Size = UDim2.new(1, 0, 1, -23)
-    f.Position = UDim2.new(0, 0, 0, 22)
+    f.Size = UDim2.new(1, 0, 1, -(23 * 1.2))
+    f.Position = UDim2.new(0, 0, 0, 22 * 1.2)
     f.BackgroundTransparency = 1
     f.BorderSizePixel = 0
     f.ScrollBarThickness = 2
@@ -523,23 +502,26 @@ local function mkTabContent(name)
     f.CanvasSize = UDim2.new()
     f.Visible = name == "Combat"
 
-    -- РґРІР° СЃС‚РѕР»Р±С†Р°
     local colL = Instance.new("Frame", f)
-    colL.Size = UDim2.new(0.5, -2, 1, 0)
+    colL.Size = UDim2.new(0.5, -(2 * 1.2), 1, 0)
     colL.BackgroundTransparency = 1
     local llout = Instance.new("UIListLayout", colL)
-    llout.Padding = UDim.new(0, 4); llout.SortOrder = Enum.SortOrder.LayoutOrder
+    llout.Padding = UDim.new(0, 4 * 1.2)
+    llout.SortOrder = Enum.SortOrder.LayoutOrder
     local lpad = Instance.new("UIPadding", colL)
-    lpad.PaddingTop = UDim.new(0, 4); lpad.PaddingLeft = UDim.new(0, 2)
+    lpad.PaddingTop = UDim.new(0, 4 * 1.2)
+    lpad.PaddingLeft = UDim.new(0, 2 * 1.2)
 
     local colR = Instance.new("Frame", f)
-    colR.Size = UDim2.new(0.5, -2, 1, 0)
-    colR.Position = UDim2.new(0.5, 2, 0, 0)
+    colR.Size = UDim2.new(0.5, -(2 * 1.2), 1, 0)
+    colR.Position = UDim2.new(0.5, 2 * 1.2, 0, 0)
     colR.BackgroundTransparency = 1
     local rlout = Instance.new("UIListLayout", colR)
-    rlout.Padding = UDim.new(0, 4); rlout.SortOrder = Enum.SortOrder.LayoutOrder
+    rlout.Padding = UDim.new(0, 4 * 1.2)
+    rlout.SortOrder = Enum.SortOrder.LayoutOrder
     local rpad = Instance.new("UIPadding", colR)
-    rpad.PaddingTop = UDim.new(0, 4); rpad.PaddingRight = UDim.new(0, 2)
+    rpad.PaddingTop = UDim.new(0, 4 * 1.2)
+    rpad.PaddingRight = UDim.new(0, 2 * 1.2)
 
     TabContents[name] = f
     return colL, colR
@@ -550,13 +532,12 @@ end
 -- ================================================================
 local CL, CR = mkTabContent("Combat")
 
--- Р›РµРІР°СЏ: Aiming + Settings
 local AimBody = mkSection(CL, "Aiming", 1)
 mkToggle(AimBody, "Redirect", true)
 mkToggle(AimBody, "Prediction", true)
-mkToggleColor(AimBody, "Use Fov", true)
-mkToggleColor(AimBody, "Fov Filled", true)
-mkToggleColor(AimBody, "Target Line", true)
+mkToggle(AimBody, "Use Fov", true)
+mkToggle(AimBody, "Fov Filled", true)
+mkToggle(AimBody, "Target Line", true)
 mkSlider(AimBody, "Fov Size", 0, 500, 500)
 mkSlider(AimBody, "Filled Transparency", 0, 100, 100)
 mkDropdown(AimBody, "Target Part", {"Head","Torso","HumanoidRootPart"}, "Head")
@@ -565,17 +546,16 @@ local SetBody = mkSection(CL, "Settings", 2)
 mkToggle(SetBody, "Visible Check", true)
 mkToggle(SetBody, "Ai", true)
 
--- РџСЂР°РІР°СЏ: Weapon Mods + Hitboxes
 local WepBody = mkSection(CR, "Weapon mods", 1)
-mkToggle(WepBody, "No Recoil",           false)
-mkToggle(WepBody, "No Spread",           false)
-mkToggle(WepBody, "No Bob",              false)
-mkToggle(WepBody, "No Sway",             false)
-mkToggle(WepBody, "Force Shooting",      false)
-mkToggle(WepBody, "Always Auto",         false)
-mkToggle(WepBody, "No Shot Animation",   false)
+mkToggle(WepBody, "No Recoil", false)
+mkToggle(WepBody, "No Spread", false)
+mkToggle(WepBody, "No Bob", false)
+mkToggle(WepBody, "No Sway", false)
+mkToggle(WepBody, "Force Shooting", false)
+mkToggle(WepBody, "Always Auto", false)
+mkToggle(WepBody, "No Shot Animation", false)
 mkToggle(WepBody, "No Reload Animation", false)
-mkToggle(WepBody, "Rapid Fire",          true)
+mkToggle(WepBody, "Rapid Fire", true)
 mkSlider(WepBody, "RPM", 0, 100, 98)
 
 local HitBody = mkSection(CR, "Hitboxes", 2)
@@ -583,28 +563,28 @@ mkToggle(HitBody, "Big Head", true)
 mkSlider(HitBody, "Size", 1, 10, 10)
 
 -- ================================================================
---  VISUALS TAB (РїСѓСЃС‚С‹С€РєР°)
+--  VISUALS TAB (ESP + настройки)
 -- ================================================================
 local VL, VR = mkTabContent("Visuals")
 local VBody = mkSection(VL, "ESP", 1)
-mkToggle(VBody, "Players", false)
-mkToggle(VBody, "Boxes",   false)
-mkToggle(VBody, "Names",   false)
-mkToggle(VBody, "Health",  false)
-mkToggle(VBody, "Tracers", false)
+local espEnabled = mkToggle(VBody, "Players", true)
+local espBoxes = mkToggle(VBody, "Boxes", true)
+local espNames = mkToggle(VBody, "Names", true)
+local espHealth = mkToggle(VBody, "Health", true)
+local espTracers = mkToggle(VBody, "Tracers", false)
 
 -- ================================================================
---  MISC TAB (РїСѓСЃС‚С‹С€РєР°)
+--  MISC TAB
 -- ================================================================
 local ML, MR = mkTabContent("Misc")
 local MBody = mkSection(ML, "Movement", 1)
-mkToggle(MBody, "Speed Hack",     false)
-mkToggle(MBody, "Infinite Jump",  false)
-mkToggle(MBody, "No Clip",        false)
+mkToggle(MBody, "Speed Hack", false)
+mkToggle(MBody, "Infinite Jump", false)
+mkToggle(MBody, "No Clip", false)
 mkSlider(MBody, "Speed", 16, 200, 50)
 
 -- ================================================================
---  CONFIG TAB (РїСѓСЃС‚С‹С€РєР°)
+--  CONFIG TAB
 -- ================================================================
 local KL, KR = mkTabContent("Config")
 local KBody = mkSection(KL, "Configs", 1)
@@ -612,7 +592,191 @@ mkToggle(KBody, "Auto Load", false)
 mkToggle(KBody, "Save on Exit", false)
 
 -- ================================================================
---  HIDE / SHOW вЂ” РєР»Р°РІРёС€Р° Insert
+--  ВСТРОЕННЫЙ ESP (из твоего кода, с привязкой к тогглам)
+-- ================================================================
+local espData = {}
+local rainbowOffset = 0
+
+local function GetRainbowColor()
+    rainbowOffset = (rainbowOffset + 0.005) % 1
+    return Color3.fromHSV(rainbowOffset, 1, 1)
+}
+
+local function CreateESP(player)
+    if player == LP or espData[player] then return end
+    local e = {
+        Box = Drawing.new("Square"),
+        Name = Drawing.new("Text"),
+        Health = Drawing.new("Square"),
+        Dist = Drawing.new("Text"),
+    }
+    e.Box.Filled = false
+    e.Box.Thickness = 1.5
+    e.Box.Visible = false
+    e.Name.Size = 12
+    e.Name.Center = true
+    e.Name.Outline = true
+    e.Name.OutlineColor = Color3.fromRGB(0,0,0)
+    e.Name.Font = 3
+    e.Name.Visible = false
+    e.Health.Filled = true
+    e.Health.Thickness = 1
+    e.Health.Visible = false
+    e.Dist.Size = 10
+    e.Dist.Center = true
+    e.Dist.Outline = true
+    e.Dist.OutlineColor = Color3.fromRGB(0,0,0)
+    e.Dist.Font = 3
+    e.Dist.Visible = false
+    espData[player] = e
+end
+
+local function RemoveESP(player)
+    local e = espData[player]
+    if e then
+        pcall(function()
+            e.Box:Remove()
+            e.Name:Remove()
+            e.Health:Remove()
+            e.Dist:Remove()
+        end)
+        espData[player] = nil
+    end
+end
+
+for _, plr in pairs(Players:GetPlayers()) do CreateESP(plr) end
+Players.PlayerAdded:Connect(CreateESP)
+Players.PlayerRemoving:Connect(RemoveESP)
+
+-- Получаем значения тогглов (костыль, но работает)
+local function getToggleState(parent, label)
+    for _, child in ipairs(parent:GetChildren()) do
+        if child:IsA("Frame") then
+            local lbl = child:FindFirstChildOfClass("TextLabel")
+            if lbl and lbl.Text == label then
+                local pill = child:FindFirstChildOfClass("TextButton")
+                if pill then
+                    return pill.BackgroundColor3 == C.red
+                end
+            end
+        end
+    end
+    return false
+end
+
+RunService.RenderStepped:Connect(function()
+    local enabled = getToggleState(VBody, "Players")
+    local showBox = getToggleState(VBody, "Boxes")
+    local showName = getToggleState(VBody, "Names")
+    local showHealth = getToggleState(VBody, "Health")
+    local showTracers = getToggleState(VBody, "Tracers")
+
+    if not enabled then
+        for _, e in pairs(espData) do
+            e.Box.Visible = false
+            e.Name.Visible = false
+            e.Health.Visible = false
+            e.Dist.Visible = false
+        end
+        return
+    end
+
+    local rainbow = GetRainbowColor()
+    for plr, e in pairs(espData) do
+        local char = plr.Character
+        if not char or not char.Parent then
+            e.Box.Visible = false
+            e.Name.Visible = false
+            e.Health.Visible = false
+            e.Dist.Visible = false
+            continue
+        end
+
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local head = char:FindFirstChild("Head")
+        if not root or not head then
+            e.Box.Visible = false
+            e.Name.Visible = false
+            e.Health.Visible = false
+            e.Dist.Visible = false
+            continue
+        end
+
+        local topPos = head.Position + Vector3.new(0, head.Size.Y/2, 0)
+        local bottomPos = root.Position - Vector3.new(0, root.Size.Y/2, 0)
+        local rightOffset = root.CFrame:VectorToWorldSpace(Vector3.new(root.Size.X/2, 0, 0))
+        local leftOffset = root.CFrame:VectorToWorldSpace(Vector3.new(-root.Size.X/2, 0, 0))
+        local rightPos = root.Position + rightOffset
+        local leftPos = root.Position + leftOffset
+
+        local topV, topOn = Camera:WorldToViewportPoint(topPos)
+        local bottomV, bottomOn = Camera:WorldToViewportPoint(bottomPos)
+        local rightV, rightOn = Camera:WorldToViewportPoint(rightPos)
+        local leftV, leftOn = Camera:WorldToViewportPoint(leftPos)
+
+        if not (topOn or bottomOn or rightOn or leftOn) then
+            e.Box.Visible = false
+            e.Name.Visible = false
+            e.Health.Visible = false
+            e.Dist.Visible = false
+            continue
+        end
+
+        local height = math.abs(topV.Y - bottomV.Y)
+        local width = math.abs(rightV.X - leftV.X)
+        if height < 5 then height = 5 end
+        if width < 5 then width = 5 end
+
+        local centerX = (leftV.X + rightV.X) / 2
+        local centerY = (topV.Y + bottomV.Y) / 2
+        local dist = (Camera.CFrame.Position - root.Position).Magnitude
+
+        if showBox then
+            e.Box.Visible = true
+            e.Box.Size = Vector2.new(width, height)
+            e.Box.Position = Vector2.new(centerX - width/2, centerY - height/2)
+            e.Box.Color = rainbow
+        else
+            e.Box.Visible = false
+        end
+
+        if showName then
+            e.Name.Visible = true
+            e.Name.Text = plr.Name
+            e.Name.Position = Vector2.new(centerX, topV.Y - 15)
+            e.Name.Color = rainbow
+        else
+            e.Name.Visible = false
+        end
+
+        if showHealth then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.MaxHealth > 0 then
+                local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+                e.Health.Visible = true
+                e.Health.Size = Vector2.new(2, height * hp)
+                e.Health.Position = Vector2.new(centerX - width/2 - 4, centerY + height/2 - height*hp)
+                e.Health.Color = Color3.fromRGB(255*(1-hp), 255*hp, 0)
+            else
+                e.Health.Visible = false
+            end
+        else
+            e.Health.Visible = false
+        end
+
+        if showTracers then
+            e.Dist.Visible = true
+            e.Dist.Text = math.floor(dist) .. "m"
+            e.Dist.Position = Vector2.new(centerX, bottomV.Y + 15)
+            e.Dist.Color = rainbow
+        else
+            e.Dist.Visible = false
+        end
+    end
+end)
+
+-- ================================================================
+--  HIDE / SHOW — Insert
 -- ================================================================
 local visible = true
 UIS.InputBegan:Connect(function(i, gpe)
@@ -623,4 +787,4 @@ UIS.InputBegan:Connect(function(i, gpe)
     end
 end)
 
-print("[RusHack] вњ“  Insert = СЃРєСЂС‹С‚СЊ/РїРѕРєР°Р·Р°С‚СЊ")
+print("[SinyxWare] ✓ Загружен. Insert = скрыть/показать. ESP на вкладке Visuals.")
