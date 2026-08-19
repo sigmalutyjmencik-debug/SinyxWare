@@ -1,43 +1,32 @@
--- ================================================================
---  SINYXWARE GUI v2 | Увеличен на 20% | ESP встроен
--- ================================================================
-
-local UIS    = game:GetService("UserInputService")
-local TS     = game:GetService("TweenService")
-local CG     = game:GetService("CoreGui")
+local UIS = game:GetService("UserInputService")
+local TS = game:GetService("TweenService")
+local CG = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LP = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local HttpService = game:GetService("HttpService")
 
 if not Drawing then error("Drawing не поддерживается") end
 
--- ================================================================
---  ЦВЕТА
--- ================================================================
 local C = {
-    bg       = Color3.fromRGB(18, 12, 12),
-    sidebar  = Color3.fromRGB(24, 15, 15),
-    panel    = Color3.fromRGB(30, 19, 19),
-    section  = Color3.fromRGB(36, 22, 22),
-    red      = Color3.fromRGB(210, 30,  30),
-    redDark  = Color3.fromRGB(130, 12,  12),
-    redBord  = Color3.fromRGB(180, 25,  25),
-    text     = Color3.fromRGB(218, 212, 212),
-    dim      = Color3.fromRGB(120, 110, 110),
-    white    = Color3.fromRGB(255, 255, 255),
-    border   = Color3.fromRGB(50,  28,  28),
-    togOff   = Color3.fromRGB(60,  38,  38),
-    blue     = Color3.fromRGB(0, 191, 255),
+    bg = Color3.fromRGB(18, 12, 12),
+    sidebar = Color3.fromRGB(24, 15, 15),
+    panel = Color3.fromRGB(30, 19, 19),
+    section = Color3.fromRGB(36, 22, 22),
+    red = Color3.fromRGB(210, 30, 30),
+    redDark = Color3.fromRGB(130, 12, 12),
+    text = Color3.fromRGB(218, 212, 212),
+    dim = Color3.fromRGB(120, 110, 110),
+    white = Color3.fromRGB(255, 255, 255),
+    border = Color3.fromRGB(50, 28, 28),
+    togOff = Color3.fromRGB(60, 38, 38),
+    blue = Color3.fromRGB(0, 191, 255),
 }
 
--- размеры ×1.2
 local W, H = 390 * 1.2, 270 * 1.2
-local SW    = 90 * 1.2
+local SW = 90 * 1.2
 
--- ================================================================
---  ROOT GUI
--- ================================================================
 pcall(function() CG:FindFirstChild("SinyxWare"):Destroy() end)
 
 local Root = Instance.new("ScreenGui")
@@ -48,57 +37,70 @@ Root.ZIndexBehavior = Enum.ZIndexBehavior.Global
 Root.Parent = CG
 
 local Outer = Instance.new("Frame", Root)
-Outer.Size     = UDim2.new(0, W, 0, H)
+Outer.Size = UDim2.new(0, W, 0, H)
 Outer.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
 Outer.BackgroundColor3 = C.red
-Outer.BorderSizePixel  = 0
+Outer.BorderSizePixel = 0
 Instance.new("UICorner", Outer).CornerRadius = UDim.new(0, 4)
 
 local Main = Instance.new("Frame", Outer)
-Main.Size     = UDim2.new(1, -4, 1, -4)
+Main.Size = UDim2.new(1, -4, 1, -4)
 Main.Position = UDim2.new(0, 2, 0, 2)
 Main.BackgroundColor3 = C.bg
-Main.BorderSizePixel  = 0
+Main.BorderSizePixel = 0
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
--- ================================================================
---  DRAG
--- ================================================================
-local drag, dstart, ostart = false, nil, nil
+local dragData = {active = false, start = nil, offset = nil, touch = nil}
+
+local function startDrag(input)
+    dragData.active = true
+    dragData.start = input.Position
+    dragData.offset = Outer.Position
+    dragData.touch = input.UserInputType == Enum.UserInputType.Touch
+end
+
+local function updateDrag(input)
+    if not dragData.active then return end
+    local delta = input.Position - dragData.start
+    Outer.Position = UDim2.new(
+        dragData.offset.X.Scale, dragData.offset.X.Offset + delta.X,
+        dragData.offset.Y.Scale, dragData.offset.Y.Offset + delta.Y
+    )
+end
+
+local function endDrag()
+    dragData.active = false
+end
+
 Main.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 then
-        drag = true
-        dstart = i.Position
-        ostart = Outer.Position
-    end
-end)
-Main.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = false end
-end)
-UIS.InputChanged:Connect(function(i)
-    if drag and i.UserInputType == Enum.UserInputType.MouseMovement then
-        local d = i.Position - dstart
-        Outer.Position = UDim2.new(
-            ostart.X.Scale, ostart.X.Offset + d.X,
-            ostart.Y.Scale, ostart.Y.Offset + d.Y
-        )
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        startDrag(i)
     end
 end)
 
--- ================================================================
---  САЙДБАР
--- ================================================================
+Main.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        endDrag()
+    end
+end)
+
+UIS.InputChanged:Connect(function(i)
+    if dragData.active and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        updateDrag(i)
+    end
+end)
+
 local Sidebar = Instance.new("Frame", Main)
 Sidebar.Size = UDim2.new(0, SW, 1, 0)
 Sidebar.BackgroundColor3 = C.sidebar
-Sidebar.BorderSizePixel  = 0
+Sidebar.BorderSizePixel = 0
 
 local SDiv = Instance.new("Frame", Main)
 SDiv.Size = UDim2.new(0, 1, 1, 0)
 SDiv.Position = UDim2.new(0, SW, 0, 0)
 SDiv.BackgroundColor3 = C.border
-SDiv.BorderSizePixel  = 0
+SDiv.BorderSizePixel = 0
 
 local TitleF = Instance.new("Frame", Sidebar)
 TitleF.Size = UDim2.new(1, 0, 0, 26 * 1.2)
@@ -117,13 +119,13 @@ local TDiv = Instance.new("Frame", Sidebar)
 TDiv.Size = UDim2.new(1, 0, 0, 1)
 TDiv.Position = UDim2.new(0, 0, 0, 26 * 1.2)
 TDiv.BackgroundColor3 = C.border
-TDiv.BorderSizePixel  = 0
+TDiv.BorderSizePixel = 0
 
 local TABS = {
-    { n = "Combat",  ico = "✖" },
-    { n = "Visuals", ico = "◎" },
-    { n = "Misc",    ico = "◉" },
-    { n = "Config",  ico = "≡" },
+    {n = "Combat", ico = "✖"},
+    {n = "Visuals", ico = "◎"},
+    {n = "Misc", ico = "◉"},
+    {n = "Config", ico = "≡"},
 }
 
 local TabBtns = {}
@@ -144,8 +146,8 @@ local function setTab(name)
     for n, t in pairs(TabBtns) do
         local on = n == name
         t.bar.BackgroundTransparency = on and 0 or 1
-        t.ico.TextColor3  = on and C.red  or C.dim
-        t.lbl.TextColor3  = on and C.white or C.dim
+        t.ico.TextColor3 = on and C.red or C.dim
+        t.lbl.TextColor3 = on and C.white or C.dim
     end
     for n, f in pairs(TabContents) do
         f.Visible = n == name
@@ -164,7 +166,7 @@ for i, tab in ipairs(TABS) do
     bar.Size = UDim2.new(0, 2, 0.65, 0)
     bar.Position = UDim2.new(0, 0, 0.175, 0)
     bar.BackgroundColor3 = C.red
-    bar.BorderSizePixel  = 0
+    bar.BorderSizePixel = 0
     bar.BackgroundTransparency = tab.n == "Combat" and 0 or 1
     Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 1)
 
@@ -187,24 +189,21 @@ for i, tab in ipairs(TABS) do
     lbl.TextColor3 = tab.n == "Combat" and C.white or C.dim
     lbl.TextXAlignment = Enum.TextXAlignment.Left
 
-    TabBtns[tab.n] = { bar = bar, ico = ico, lbl = lbl }
-
+    TabBtns[tab.n] = {bar = bar, ico = ico, lbl = lbl}
     btn.MouseButton1Click:Connect(function() setTab(tab.n) end)
+    btn.TouchTap:Connect(function() setTab(tab.n) end)
 end
 
--- ================================================================
---  КОНТЕНТ
--- ================================================================
 local ContentArea = Instance.new("Frame", Main)
-ContentArea.Size = UDim2.new(1, -SW-1, 1, -(14 * 1.2))
-ContentArea.Position = UDim2.new(0, SW+1, 0, 0)
+ContentArea.Size = UDim2.new(1, -SW - 1, 1, -(14 * 1.2))
+ContentArea.Position = UDim2.new(0, SW + 1, 0, 0)
 ContentArea.BackgroundTransparency = 1
 ContentArea.ClipsDescendants = true
 
 local TopBar = Instance.new("Frame", ContentArea)
 TopBar.Size = UDim2.new(1, 0, 0, 21 * 1.2)
 TopBar.BackgroundColor3 = C.sidebar
-TopBar.BorderSizePixel  = 0
+TopBar.BorderSizePixel = 0
 
 local SearchIco = Instance.new("TextLabel", TopBar)
 SearchIco.Size = UDim2.new(0, 14 * 1.2, 1, 0)
@@ -242,13 +241,10 @@ local TopDiv = Instance.new("Frame", ContentArea)
 TopDiv.Size = UDim2.new(1, 0, 0, 1)
 TopDiv.Position = UDim2.new(0, 0, 0, 21 * 1.2)
 TopDiv.BackgroundColor3 = C.border
-TopDiv.BorderSizePixel  = 0
+TopDiv.BorderSizePixel = 0
 
--- ================================================================
---  ХЕЛПЕРЫ
--- ================================================================
-local function corner(f, r) 
-    Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2) 
+local function corner(f, r)
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2)
 end
 
 local function mkToggle(parent, label, default)
@@ -277,29 +273,28 @@ local function mkToggle(parent, label, default)
 
     local knob = Instance.new("Frame", pill)
     knob.Size = UDim2.new(0, 8 * 1.2, 0, 8 * 1.2)
-    if default then
-        knob.Position = UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2))
-    else
-        knob.Position = UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))
-    end
+    knob.Position = default and UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2)) or UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))
     knob.BackgroundColor3 = C.white
     knob.BorderSizePixel = 0
     corner(knob, 4)
 
     local val = default
-    pill.MouseButton1Click:Connect(function()
+    local function toggle()
         val = not val
-        TS:Create(pill, TweenInfo.new(0.12), { BackgroundColor3 = val and C.red or C.togOff }):Play()
+        TS:Create(pill, TweenInfo.new(0.12), {BackgroundColor3 = val and C.red or C.togOff}):Play()
         if val then
-            TS:Create(knob, TweenInfo.new(0.12), { Position = UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2)) }):Play()
+            TS:Create(knob, TweenInfo.new(0.12), {Position = UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2))}):Play()
         else
-            TS:Create(knob, TweenInfo.new(0.12), { Position = UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2)) }):Play()
+            TS:Create(knob, TweenInfo.new(0.12), {Position = UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))}):Play()
         end
-    end)
+    end
+
+    pill.MouseButton1Click:Connect(toggle)
+    pill.TouchTap:Connect(toggle)
     return row, function() return val end
 end
 
-local function mkSlider(parent, label, mn, mx, def)
+local function mkSlider(parent, label, mn, mx, def, callback)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 26 * 1.2)
     wrap.BackgroundTransparency = 1
@@ -324,7 +319,7 @@ local function mkSlider(parent, label, mn, mx, def)
     corner(track, 2)
 
     local fill = Instance.new("Frame", track)
-    fill.Size = UDim2.new((def-mn)/(mx-mn), 0, 1, 0)
+    fill.Size = UDim2.new((def - mn) / (mx - mn), 0, 1, 0)
     fill.BackgroundColor3 = C.red
     fill.BorderSizePixel = 0
     corner(fill, 2)
@@ -347,21 +342,30 @@ local function mkSlider(parent, label, mn, mx, def)
         val = math.floor(mn + (mx - mn) * pct + 0.5)
         fill.Size = UDim2.new(pct, 0, 1, 0)
         valLbl.Text = ("%g/%g"):format(val, mx)
+        if callback then callback(val) end
+    end
+
+    local function startSlide(input)
+        sliding = true
+        upd(input.Position.X)
     end
 
     track.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then
-            sliding = true
-            upd(i.Position.X)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            startSlide(i)
         end
     end)
+
     UIS.InputChanged:Connect(function(i)
-        if sliding and i.UserInputType == Enum.UserInputType.MouseMovement then
+        if sliding and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
             upd(i.Position.X)
         end
     end)
+
     UIS.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            sliding = false
+        end
     end)
 
     return wrap
@@ -410,14 +414,15 @@ local function mkDropdown(parent, label, options, default)
     arr.TextSize = 6 * 1.2
 
     local idx = 1
-    for i, v in ipairs(options) do 
-        if v == default then idx = i end 
-    end
-    btn.MouseButton1Click:Connect(function()
+    for i, v in ipairs(options) do if v == default then idx = i end end
+
+    local function nextOpt()
         idx = (idx % #options) + 1
         cur.Text = options[idx]
-    end)
+    end
 
+    btn.MouseButton1Click:Connect(nextOpt)
+    btn.TouchTap:Connect(nextOpt)
     return wrap
 end
 
@@ -432,7 +437,7 @@ local function mkSection(parent, title, lo)
     local hdr = Instance.new("Frame", wrap)
     hdr.Size = UDim2.new(1, 0, 0, 17 * 1.2)
     hdr.BackgroundColor3 = C.section
-    hdr.BorderSizePixel  = 0
+    hdr.BorderSizePixel = 0
     corner(hdr, 2)
 
     local htxt = Instance.new("TextLabel", hdr)
@@ -460,8 +465,9 @@ local function mkSection(parent, title, lo)
     body.AutomaticSize = Enum.AutomaticSize.Y
     body.Position = UDim2.new(0, 0, 0, 19 * 1.2)
     body.BackgroundColor3 = C.panel
-    body.BorderSizePixel  = 0
+    body.BorderSizePixel = 0
     corner(body, 2)
+    body.Visible = true
 
     local bl = Instance.new("UIListLayout", body)
     bl.Padding = UDim.new(0, 1)
@@ -472,18 +478,26 @@ local function mkSection(parent, title, lo)
     bp.PaddingBottom = UDim.new(0, 3 * 1.2)
 
     local collapsed = false
-    chevron.MouseButton1Click:Connect(function()
+    local function toggleSection()
         collapsed = not collapsed
-        body.Visible = not collapsed
-        chevron.Text = collapsed and ">" or "∨"
-    end)
+        if collapsed then
+            TS:Create(body, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+            TS:Create(body, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+            chevron.Text = ">"
+        else
+            body.Size = UDim2.new(1, 0, 0, 0)
+            body.BackgroundTransparency = 0
+            body.AutomaticSize = Enum.AutomaticSize.Y
+            TS:Create(body, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+            chevron.Text = "∨"
+        end
+    end
 
+    chevron.MouseButton1Click:Connect(toggleSection)
+    chevron.TouchTap:Connect(toggleSection)
     return body
 end
 
--- ================================================================
---  ВКЛАДКИ
--- ================================================================
 local function mkTabContent(name)
     local f = Instance.new("ScrollingFrame", ContentArea)
     f.Size = UDim2.new(1, 0, 1, -(23 * 1.2))
@@ -521,24 +535,60 @@ local function mkTabContent(name)
     return colL, colR
 end
 
--- ================================================================
---  COMBAT TAB
--- ================================================================
 local CL, CR = mkTabContent("Combat")
 
-local AimBody = mkSection(CL, "Aiming", 1)
-mkToggle(AimBody, "Redirect", true)
-mkToggle(AimBody, "Prediction", true)
-mkToggle(AimBody, "Use Fov", true)
-mkToggle(AimBody, "Fov Filled", true)
-mkToggle(AimBody, "Target Line", true)
-mkSlider(AimBody, "Fov Size", 0, 500, 500)
-mkSlider(AimBody, "Filled Transparency", 0, 100, 100)
-mkDropdown(AimBody, "Target Part", {"Head","Torso","HumanoidRootPart"}, "Head")
+local AimBody = mkSection(CL, "Aimbot", 1)
 
-local SetBody = mkSection(CL, "Settings", 2)
-mkToggle(SetBody, "Visible Check", true)
-mkToggle(SetBody, "Ai", true)
+local aimKey = "Q"
+local aimKeyBox = Instance.new("TextButton", AimBody)
+aimKeyBox.Size = UDim2.new(0.3, 0, 0, 16 * 1.2)
+aimKeyBox.Position = UDim2.new(0.6, 0, 0, 0)
+aimKeyBox.BackgroundColor3 = C.section
+aimKeyBox.Text = aimKey
+aimKeyBox.TextColor3 = C.white
+aimKeyBox.Font = Enum.Font.GothamBold
+aimKeyBox.TextSize = 7 * 1.2
+aimKeyBox.BorderSizePixel = 0
+corner(aimKeyBox, 2)
+
+local keyAwait = false
+aimKeyBox.MouseButton1Click:Connect(function()
+    keyAwait = true
+    aimKeyBox.Text = "..."
+end)
+aimKeyBox.TouchTap:Connect(function()
+    keyAwait = true
+    aimKeyBox.Text = "..."
+end)
+
+UIS.InputBegan:Connect(function(i, gpe)
+    if gpe then return end
+    if keyAwait then
+        if i.KeyCode ~= Enum.KeyCode.Unknown then
+            aimKey = tostring(i.KeyCode):gsub("Enum.KeyCode.", "")
+            aimKeyBox.Text = aimKey
+            keyAwait = false
+        end
+    end
+end)
+
+local aimEnableRow, aimEnabled = mkToggle(AimBody, "Aimbot", false)
+
+local snowFovRow, snowFov = mkToggle(AimBody, "Snow Fov", true)
+
+mkSlider(AimBody, "Fov Size", 10, 1000, 80, function(v)
+    if Circle then Circle.Radius = v end
+end)
+
+mkSlider(AimBody, "Smooth", 1, 20, 1)
+
+local predictRow, predictEnabled = mkToggle(AimBody, "Predict", false)
+mkSlider(AimBody, "Predict ms", 0, 500, 14)
+
+local MobileBody = mkSection(CL, "Mobile Aimbot", 2)
+
+local snowBtnRow, snowBtn = mkToggle(MobileBody, "Snow Button", false)
+local lockBtnRow, lockBtn = mkToggle(MobileBody, "Lock Button", false)
 
 local WepBody = mkSection(CR, "Weapon mods", 1)
 mkToggle(WepBody, "No Recoil", false)
@@ -556,9 +606,6 @@ local HitBody = mkSection(CR, "Hitboxes", 2)
 mkToggle(HitBody, "Big Head", true)
 mkSlider(HitBody, "Size", 1, 10, 10)
 
--- ================================================================
---  VISUALS TAB
--- ================================================================
 local VL, VR = mkTabContent("Visuals")
 local VBody = mkSection(VL, "ESP", 1)
 mkToggle(VBody, "Players", true)
@@ -567,9 +614,6 @@ mkToggle(VBody, "Names", true)
 mkToggle(VBody, "Health", true)
 mkToggle(VBody, "Tracers", false)
 
--- ================================================================
---  MISC TAB
--- ================================================================
 local ML, MR = mkTabContent("Misc")
 local MBody = mkSection(ML, "Movement", 1)
 mkToggle(MBody, "Speed Hack", false)
@@ -577,18 +621,19 @@ mkToggle(MBody, "Infinite Jump", false)
 mkToggle(MBody, "No Clip", false)
 mkSlider(MBody, "Speed", 16, 200, 50)
 
--- ================================================================
---  CONFIG TAB
--- ================================================================
 local KL, KR = mkTabContent("Config")
 local KBody = mkSection(KL, "Configs", 1)
 mkToggle(KBody, "Auto Load", false)
 mkToggle(KBody, "Save on Exit", false)
 
--- ================================================================
---  ESP
--- ================================================================
-local espData = {}
+local aimCircleSize = 80
+local aimPart = "Head"
+local smoothness = 1
+local predictMs = 14
+local usePredict = false
+local useSnowFov = true
+
+local aimData = {}
 local rainbowOffset = 0
 
 local function GetRainbowColor()
@@ -597,7 +642,7 @@ local function GetRainbowColor()
 end
 
 local function CreateESP(player)
-    if player == LP or espData[player] then return end
+    if player == LP or aimData[player] then return end
     local e = {
         Box = Drawing.new("Square"),
         Name = Drawing.new("Text"),
@@ -610,7 +655,7 @@ local function CreateESP(player)
     e.Name.Size = 12
     e.Name.Center = true
     e.Name.Outline = true
-    e.Name.OutlineColor = Color3.fromRGB(0,0,0)
+    e.Name.OutlineColor = Color3.fromRGB(0, 0, 0)
     e.Name.Font = 3
     e.Name.Visible = false
     e.Health.Filled = true
@@ -619,14 +664,14 @@ local function CreateESP(player)
     e.Dist.Size = 10
     e.Dist.Center = true
     e.Dist.Outline = true
-    e.Dist.OutlineColor = Color3.fromRGB(0,0,0)
+    e.Dist.OutlineColor = Color3.fromRGB(0, 0, 0)
     e.Dist.Font = 3
     e.Dist.Visible = false
-    espData[player] = e
+    aimData[player] = e
 end
 
 local function RemoveESP(player)
-    local e = espData[player]
+    local e = aimData[player]
     if e then
         pcall(function()
             e.Box:Remove()
@@ -634,7 +679,7 @@ local function RemoveESP(player)
             e.Health:Remove()
             e.Dist:Remove()
         end)
-        espData[player] = nil
+        aimData[player] = nil
     end
 end
 
@@ -648,53 +693,131 @@ local showName = true
 local showHealth = true
 local showTracers = false
 
-for _, child in ipairs(VBody:GetChildren()) do
-    if child:IsA("Frame") then
-        local lbl = child:FindFirstChildOfClass("TextLabel")
-        if lbl then
-            if lbl.Text == "Players" then
+local function getToggleState(parent, label)
+    for _, child in ipairs(parent:GetChildren()) do
+        if child:IsA("Frame") then
+            local lbl = child:FindFirstChildOfClass("TextLabel")
+            if lbl and lbl.Text == label then
                 local pill = child:FindFirstChildOfClass("TextButton")
                 if pill then
-                    pill.MouseButton1Click:Connect(function()
-                        espEnabled = not espEnabled
-                    end)
-                end
-            elseif lbl.Text == "Boxes" then
-                local pill = child:FindFirstChildOfClass("TextButton")
-                if pill then
-                    pill.MouseButton1Click:Connect(function()
-                        showBox = not showBox
-                    end)
-                end
-            elseif lbl.Text == "Names" then
-                local pill = child:FindFirstChildOfClass("TextButton")
-                if pill then
-                    pill.MouseButton1Click:Connect(function()
-                        showName = not showName
-                    end)
-                end
-            elseif lbl.Text == "Health" then
-                local pill = child:FindFirstChildOfClass("TextButton")
-                if pill then
-                    pill.MouseButton1Click:Connect(function()
-                        showHealth = not showHealth
-                    end)
-                end
-            elseif lbl.Text == "Tracers" then
-                local pill = child:FindFirstChildOfClass("TextButton")
-                if pill then
-                    pill.MouseButton1Click:Connect(function()
-                        showTracers = not showTracers
-                    end)
+                    return pill.BackgroundColor3 == C.red
                 end
             end
         end
     end
+    return false
 end
 
+local ScreenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+local Circle = Drawing.new("Circle")
+Circle.Thickness = 2
+Circle.NumSides = 32
+Circle.Visible = true
+Circle.Color = Color3.fromRGB(160, 32, 240)
+Circle.Radius = aimCircleSize
+Circle.Filled = false
+Circle.Position = ScreenCenter
+
+local Circle2 = Drawing.new("Circle")
+Circle2.Thickness = 2
+Circle2.NumSides = 32
+Circle2.Visible = true
+Circle2.Color = Color3.fromRGB(255, 255, 255)
+Circle2.Radius = aimCircleSize + 10
+Circle2.Filled = false
+Circle2.Position = ScreenCenter
+Circle2.Transparency = 0.3
+
+local function GetClosestPlayer()
+    local closest = nil
+    local closestDist = aimCircleSize
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr == LP then continue end
+        if not plr.Character or not plr.Character:FindFirstChild("Head") then continue end
+
+        local part = plr.Character.Head
+        local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+
+        if not onScreen then continue end
+
+        local dist = (Vector2.new(pos.X, pos.Y) - ScreenCenter).Magnitude
+
+        if dist < closestDist then            closestDist = dist
+            closest = plr
+        end
+    end
+
+    return closest, closestDist
+end
+
+local function AimAt(target)
+    if not target or not target.Character or not target.Character:FindFirstChild("Head") then return end
+
+    local part = target.Character.Head
+    local targetPos = part.Position
+
+    if usePredict then
+        local vel = target.Character:FindFirstChild("HumanoidRootPart")
+        if vel and vel.AssemblyLinearVelocity then
+            targetPos = targetPos + (vel.AssemblyLinearVelocity * (predictMs / 1000))
+        end
+    end
+
+    Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+end
+
+UIS.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+    end
+end)
+
+local currentAimTarget = nil
+
 RunService.RenderStepped:Connect(function()
+    ScreenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    Circle.Position = ScreenCenter
+    Circle2.Position = ScreenCenter
+
+    local aimOn = aimEnabled()
+    local snowOn = snowFov()
+    local predOn = predictEnabled()
+
+    usePredict = predOn
+    useSnowFov = snowOn
+
+    local target, dist = GetClosestPlayer()
+
+    if aimOn and target and (not useSnowFov or dist <= aimCircleSize) then
+        currentAimTarget = target
+        local keyPressed = false
+        if aimKey ~= "" then
+            local keyEnum = Enum.KeyCode[aimKey]
+            if keyEnum then
+                keyPressed = UIS:IsKeyDown(keyEnum)
+            end
+        end
+        if keyPressed or not useSnowFov then
+            AimAt(target)
+            Circle.Color = Color3.fromRGB(0, 255, 0)
+            Circle2.Color = Color3.fromRGB(0, 255, 0)
+        else
+            Circle.Color = Color3.fromRGB(255, 255, 0)
+            Circle2.Color = Color3.fromRGB(255, 255, 0)
+        end
+    else
+        currentAimTarget = nil
+        Circle.Color = Color3.fromRGB(160, 32, 240)
+        Circle2.Color = Color3.fromRGB(255, 255, 255)
+    end
+
+    if not aimOn then
+        Circle.Color = Color3.fromRGB(160, 32, 240)
+        Circle2.Color = Color3.fromRGB(255, 255, 255)
+    end
+
     if not espEnabled then
-        for _, e in pairs(espData) do
+        for _, e in pairs(aimData) do
             e.Box.Visible = false
             e.Name.Visible = false
             e.Health.Visible = false
@@ -704,7 +827,7 @@ RunService.RenderStepped:Connect(function()
     end
 
     local rainbow = GetRainbowColor()
-    for plr, e in pairs(espData) do
+    for plr, e in pairs(aimData) do
         local char = plr.Character
         if not char or not char.Parent then
             e.Box.Visible = false
@@ -724,10 +847,10 @@ RunService.RenderStepped:Connect(function()
             continue
         end
 
-        local topPos = head.Position + Vector3.new(0, head.Size.Y/2, 0)
-        local bottomPos = root.Position - Vector3.new(0, root.Size.Y/2, 0)
-        local rightOffset = root.CFrame:VectorToWorldSpace(Vector3.new(root.Size.X/2, 0, 0))
-        local leftOffset = root.CFrame:VectorToWorldSpace(Vector3.new(-root.Size.X/2, 0, 0))
+        local topPos = head.Position + Vector3.new(0, head.Size.Y / 2, 0)
+        local bottomPos = root.Position - Vector3.new(0, root.Size.Y / 2, 0)
+        local rightOffset = root.CFrame:VectorToWorldSpace(Vector3.new(root.Size.X / 2, 0, 0))
+        local leftOffset = root.CFrame:VectorToWorldSpace(Vector3.new(-root.Size.X / 2, 0, 0))
         local rightPos = root.Position + rightOffset
         local leftPos = root.Position + leftOffset
 
@@ -756,7 +879,7 @@ RunService.RenderStepped:Connect(function()
         if showBox then
             e.Box.Visible = true
             e.Box.Size = Vector2.new(width, height)
-            e.Box.Position = Vector2.new(centerX - width/2, centerY - height/2)
+            e.Box.Position = Vector2.new(centerX - width / 2, centerY - height / 2)
             e.Box.Color = rainbow
         else
             e.Box.Visible = false
@@ -777,8 +900,8 @@ RunService.RenderStepped:Connect(function()
                 local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
                 e.Health.Visible = true
                 e.Health.Size = Vector2.new(2, height * hp)
-                e.Health.Position = Vector2.new(centerX - width/2 - 4, centerY + height/2 - height*hp)
-                e.Health.Color = Color3.fromRGB(255*(1-hp), 255*hp, 0)
+                e.Health.Position = Vector2.new(centerX - width / 2 - 4, centerY + height / 2 - height * hp)
+                e.Health.Color = Color3.fromRGB(255 * (1 - hp), 255 * hp, 0)
             else
                 e.Health.Visible = false
             end
@@ -797,16 +920,141 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ================================================================
---  HIDE / SHOW
--- ================================================================
-local visible = true
+local function isMobile()
+    return UIS.TouchEnabled and not UIS.MouseEnabled
+end
+
+local function isTablet()
+    return UIS.TouchEnabled and UIS.MouseEnabled
+end
+
+local mobileButton = nil
+
+if isMobile() or isTablet() then
+    local btnGui = Instance.new("ScreenGui")
+    btnGui.Parent = CG
+    btnGui.Name = "SinyxWareButton"
+    btnGui.ResetOnSpawn = false
+
+    mobileButton = Instance.new("ImageButton")
+    mobileButton.Size = UDim2.new(0, 50, 0, 50)
+    mobileButton.Position = UDim2.new(1, -60, 0.5, -25)
+    mobileButton.Image = "rbxassetid://73073995075962"
+    mobileButton.BackgroundTransparency = 1
+    mobileButton.Parent = btnGui
+
+    local btnDrag = {active = false, start = nil, offset = nil}
+
+    mobileButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            btnDrag.active = true
+            btnDrag.start = input.Position
+            btnDrag.offset = mobileButton.Position
+        end
+    end)
+
+    mobileButton.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            btnDrag.active = false
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if btnDrag.active and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - btnDrag.start
+            mobileButton.Position = UDim2.new(
+                btnDrag.offset.X.Scale,
+                btnDrag.offset.X.Offset + delta.X,
+                btnDrag.offset.Y.Scale,
+                btnDrag.offset.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    local function toggleGUI()
+        Root.Enabled = not Root.Enabled
+        if Circle then Circle.Visible = Root.Enabled end
+        if Circle2 then Circle2.Visible = Root.Enabled end
+    end
+
+    mobileButton.MouseButton1Click:Connect(toggleGUI)
+    mobileButton.TouchTap:Connect(toggleGUI)
+end
+
+local function toggleGUI()
+    Root.Enabled = not Root.Enabled
+    if Circle then Circle.Visible = Root.Enabled end
+    if Circle2 then Circle2.Visible = Root.Enabled end
+end
+
 UIS.InputBegan:Connect(function(i, gpe)
     if gpe then return end
+    if i.KeyCode == Enum.KeyCode.LeftControl or i.KeyCode == Enum.KeyCode.RightControl then
+        toggleGUI()
+    end
     if i.KeyCode == Enum.KeyCode.Insert then
-        visible = not visible
-        Outer.Visible = visible
+        toggleGUI()
     end
 end)
 
-print("[SinyxWare] ✓ Загружен. Insert = скрыть/показать.")
+local infiniteJump = false
+local speedHack = false
+local noClip = false
+local speedValue = 50
+
+local function getMiscState()
+    for _, child in ipairs(MBody:GetChildren()) do
+        if child:IsA("Frame") then
+            local lbl = child:FindFirstChildOfClass("TextLabel")
+            if lbl then
+                local pill = child:FindFirstChildOfClass("TextButton")
+                if pill then
+                    if lbl.Text == "Infinite Jump" then
+                        infiniteJump = pill.BackgroundColor3 == C.red
+                    elseif lbl.Text == "Speed Hack" then
+                        speedHack = pill.BackgroundColor3 == C.red
+                    elseif lbl.Text == "No Clip" then
+                        noClip = pill.BackgroundColor3 == C.red
+                    end
+                end
+            end
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    getMiscState()
+
+    if infiniteJump and LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+        hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+    end
+
+    if speedHack and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        local root = LP.Character.HumanoidRootPart
+        local vel = root.AssemblyLinearVelocity
+        local newVel = vel
+        if vel.Magnitude > 0 then
+            newVel = vel.Unit * speedValue
+            root.AssemblyLinearVelocity = newVel
+        end
+    end
+
+    if noClip and LP.Character then
+        for _, part in ipairs(LP.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+UIS.InputBegan:Connect(function(i, gpe)
+    if gpe then return end
+    if i.KeyCode == Enum.KeyCode.Space and infiniteJump and LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+        hum:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+Root.Enabled = true
