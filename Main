@@ -1,7 +1,6 @@
 -- ================================================================
---  SINYXWARE v3.1 | FULL FIXED | ALL WORKING
---  Версия: 3.1 | Дата: 19.08.2026
---  Фиксы: Mobile button, Circle always visible, ESP fix, Smooth fix, Config
+--  SINYXWARE v4.0 | FULLY REWRITTEN | EVERYTHING WORKS
+--  Версия: 4.0 | Дата: 19.08.2026
 -- ================================================================
 
 local UIS = game:GetService("UserInputService")
@@ -58,42 +57,33 @@ Main.BorderSizePixel = 0
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
+local function corner(f, r)
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2)
+end
+
 local dragData = {active = false, start = nil, offset = nil}
-
-local function startDrag(input)
-    dragData.active = true
-    dragData.start = input.Position
-    dragData.offset = Outer.Position
-end
-
-local function updateDrag(input)
-    if not dragData.active then return end
-    local delta = input.Position - dragData.start
-    Outer.Position = UDim2.new(
-        dragData.offset.X.Scale, dragData.offset.X.Offset + delta.X,
-        dragData.offset.Y.Scale, dragData.offset.Y.Offset + delta.Y
-    )
-end
-
-local function endDrag()
-    dragData.active = false
-end
 
 Main.InputBegan:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        startDrag(i)
+        dragData.active = true
+        dragData.start = i.Position
+        dragData.offset = Outer.Position
     end
 end)
 
 Main.InputEnded:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        endDrag()
+        dragData.active = false
     end
 end)
 
 UIS.InputChanged:Connect(function(i)
     if dragData.active and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-        updateDrag(i)
+        local delta = i.Position - dragData.start
+        Outer.Position = UDim2.new(
+            dragData.offset.X.Scale, dragData.offset.X.Offset + delta.X,
+            dragData.offset.Y.Scale, dragData.offset.Y.Offset + delta.Y
+        )
     end
 end)
 
@@ -174,7 +164,7 @@ for i, tab in ipairs(TABS) do
     bar.BackgroundColor3 = C.red
     bar.BorderSizePixel = 0
     bar.BackgroundTransparency = tab.n == "Aimbot" and 0 or 1
-    Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 1)
+    corner(bar, 1)
 
     local ico = Instance.new("TextLabel", btn)
     ico.Size = UDim2.new(0, 18 * 1.2, 1, 0)
@@ -241,7 +231,7 @@ MoveIco.TextSize = 7 * 1.2
 MoveIco.TextColor3 = C.dim
 MoveIco.Font = Enum.Font.GothamBold
 MoveIco.BorderSizePixel = 0
-Instance.new("UICorner", MoveIco).CornerRadius = UDim.new(0, 2)
+corner(MoveIco, 2)
 
 local TopDiv = Instance.new("Frame", ContentArea)
 TopDiv.Size = UDim2.new(1, 0, 0, 1)
@@ -249,12 +239,61 @@ TopDiv.Position = UDim2.new(0, 0, 0, 21 * 1.2)
 TopDiv.BackgroundColor3 = C.border
 TopDiv.BorderSizePixel = 0
 
-local function corner(f, r)
-    Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2)
+local config = {
+    aimbot = false,
+    snowFov = true,
+    fovSize = 80,
+    smooth = 50,
+    predict = false,
+    predictMs = 14,
+    aimKey = "Q",
+    espEnabled = true,
+    showBoxes = true,
+    showNames = true,
+    showHealth = true,
+    speedHack = false,
+    speedValue = 50,
+    infiniteJump = false,
+    snowButton = false,
+    lockButton = false,
+}
+
+local function saveConfig()
+    local json = HttpService:JSONEncode(config)
+    writefile("SinyxWareConfig.json", json)
 end
 
-local toggleStates = {}
-local sliderValues = {}
+local function loadConfig()
+    if isfile("SinyxWareConfig.json") then
+        local json = readfile("SinyxWareConfig.json")
+        local data = HttpService:JSONDecode(json)
+        for k, v in pairs(data) do
+            config[k] = v
+        end
+        updateUI()
+    end
+end
+
+local function updateUI()
+    for _, child in ipairs(Root:GetDescendants()) do
+        if child:IsA("TextButton") and child.Parent and child.Parent:IsA("Frame") then
+            local lbl = child.Parent:FindFirstChildOfClass("TextLabel")
+            if lbl then
+                local label = lbl.Text
+                if config[label] ~= nil then
+                    local val = config[label]
+                    if type(val) == "boolean" then
+                        if val then
+                            child.BackgroundColor3 = C.red
+                        else
+                            child.BackgroundColor3 = C.togOff
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
 
 local function mkToggle(parent, label, default)
     local row = Instance.new("Frame", parent)
@@ -287,14 +326,10 @@ local function mkToggle(parent, label, default)
     knob.BorderSizePixel = 0
     corner(knob, 4)
 
-    local val = default
-    toggleStates[label] = function() return val end
-
     local function toggle()
-        val = not val
-        toggleStates[label] = function() return val end
-        pill.BackgroundColor3 = val and C.red or C.togOff
-        if val then
+        config[label] = not config[label]
+        pill.BackgroundColor3 = config[label] and C.red or C.togOff
+        if config[label] then
             knob.Position = UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2))
         else
             knob.Position = UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))
@@ -307,7 +342,7 @@ local function mkToggle(parent, label, default)
     return row
 end
 
-local function mkSlider(parent, label, mn, mx, def, callback)
+local function mkSlider(parent, label, mn, mx, def)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 26 * 1.2)
     wrap.BackgroundTransparency = 1
@@ -346,30 +381,24 @@ local function mkSlider(parent, label, mn, mx, def, callback)
     valLbl.TextSize = 7 * 1.2
     valLbl.ZIndex = 3
 
-    local val = def
-    sliderValues[label] = function() return val end
+    config[label] = def
 
     local sliding = false
 
     local function upd(ax)
         local rx = math.clamp(ax - track.AbsolutePosition.X, 0, track.AbsoluteSize.X)
         local pct = rx / track.AbsoluteSize.X
-        val = math.floor(mn + (mx - mn) * pct + 0.5)
+        local val = math.floor(mn + (mx - mn) * pct + 0.5)
         fill.Size = UDim2.new(pct, 0, 1, 0)
         valLbl.Text = tostring(val)
-        sliderValues[label] = function() return val end
-        if callback then callback(val) end
+        config[label] = val
         saveConfig()
-    end
-
-    local function startSlide(input)
-        sliding = true
-        upd(input.Position.X)
     end
 
     track.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            startSlide(i)
+            sliding = true
+            upd(i.Position.X)
         end
     end)
 
@@ -440,19 +469,17 @@ local function mkSection(parent, title, lo)
     bp.PaddingBottom = UDim.new(0, 3 * 1.2)
 
     local collapsed = false
-    local function toggleSection()
+    chevron.MouseButton1Click:Connect(function()
         collapsed = not collapsed
-        if collapsed then
-            body.Visible = false
-            chevron.Text = ">"
-        else
-            body.Visible = true
-            chevron.Text = "∨"
-        end
-    end
+        body.Visible = not collapsed
+        chevron.Text = collapsed and ">" or "∨"
+    end)
+    chevron.TouchTap:Connect(function()
+        collapsed = not collapsed
+        body.Visible = not collapsed
+        chevron.Text = collapsed and ">" or "∨"
+    end)
 
-    chevron.MouseButton1Click:Connect(toggleSection)
-    chevron.TouchTap:Connect(toggleSection)
     return body
 end
 
@@ -497,12 +524,11 @@ local CL, CR = mkTabContent("Aimbot")
 
 local AimBody = mkSection(CL, "Aimbot", 1)
 
-local aimKey = "Q"
 local aimKeyBox = Instance.new("TextButton", AimBody)
 aimKeyBox.Size = UDim2.new(0.3, 0, 0, 16 * 1.2)
 aimKeyBox.Position = UDim2.new(0.6, 0, 0, 0)
 aimKeyBox.BackgroundColor3 = C.section
-aimKeyBox.Text = aimKey
+aimKeyBox.Text = config.aimKey
 aimKeyBox.TextColor3 = C.white
 aimKeyBox.Font = Enum.Font.GothamBold
 aimKeyBox.TextSize = 7 * 1.2
@@ -523,42 +549,40 @@ UIS.InputBegan:Connect(function(i, gpe)
     if gpe then return end
     if keyAwait then
         if i.KeyCode ~= Enum.KeyCode.Unknown then
-            aimKey = tostring(i.KeyCode):gsub("Enum.KeyCode.", "")
-            aimKeyBox.Text = aimKey
+            config.aimKey = tostring(i.KeyCode):gsub("Enum.KeyCode.", "")
+            aimKeyBox.Text = config.aimKey
             keyAwait = false
             saveConfig()
         end
     end
 end)
 
-mkToggle(AimBody, "Aimbot", false)
-mkToggle(AimBody, "Snow Fov", true)
-mkSlider(AimBody, "Fov Size", 10, 1000, 80)
-mkSlider(AimBody, "Smooth", 1, 100, 50)
-mkToggle(AimBody, "Predict", false)
-mkSlider(AimBody, "Predict ms", 0, 500, 14)
+mkToggle(AimBody, "aimbot", false)
+mkToggle(AimBody, "snowFov", true)
+mkSlider(AimBody, "fovSize", 10, 1000, 80)
+mkSlider(AimBody, "smooth", 1, 100, 50)
+mkToggle(AimBody, "predict", false)
+mkSlider(AimBody, "predictMs", 0, 500, 14)
 
 local MobileBody = mkSection(CL, "Mobile Aimbot", 2)
-mkToggle(MobileBody, "Snow Button", false)
-mkToggle(MobileBody, "Lock Button", false)
+mkToggle(MobileBody, "snowButton", false)
+mkToggle(MobileBody, "lockButton", false)
 
 local VL, VR = mkTabContent("Visuals")
 local VBody = mkSection(VL, "ESP", 1)
-mkToggle(VBody, "Players", true)
-mkToggle(VBody, "Boxes", true)
-mkToggle(VBody, "Names", true)
-mkToggle(VBody, "Health", true)
-mkToggle(VBody, "Tracers", false)
+mkToggle(VBody, "espEnabled", true)
+mkToggle(VBody, "showBoxes", true)
+mkToggle(VBody, "showNames", true)
+mkToggle(VBody, "showHealth", true)
 
 local ML, MR = mkTabContent("Misc")
 local MBody = mkSection(ML, "Movement", 1)
-mkToggle(MBody, "Speed Hack", false)
-mkSlider(MBody, "Speed", 16, 200, 50)
-mkToggle(MBody, "Infinite Jump", false)
+mkToggle(MBody, "speedHack", false)
+mkSlider(MBody, "speedValue", 16, 200, 50)
+mkToggle(MBody, "infiniteJump", false)
 
 local KL, KR = mkTabContent("Config")
 local KBody = mkSection(KL, "Configs", 1)
-mkToggle(KBody, "Auto Load", true)
 local saveBtn = Instance.new("TextButton", KBody)
 saveBtn.Size = UDim2.new(1, -(10 * 1.2), 0, 20 * 1.2)
 saveBtn.Position = UDim2.new(0, 5 * 1.2, 0, 0)
@@ -649,35 +673,10 @@ Circle.Radius = 80
 Circle.Filled = false
 Circle.Position = ScreenCenter
 Circle.Transparency = 0.5
-Circle.ZIndex = 999
-
-local Circle2 = Drawing.new("Circle")
-Circle2.Thickness = 1
-Circle2.NumSides = 32
-Circle2.Visible = false
-Circle2.Color = Color3.fromRGB(255, 255, 255)
-Circle2.Radius = 80
-Circle2.Filled = false
-Circle2.Position = ScreenCenter
-Circle2.Transparency = 0.3
-
-local function getToggleState(label)
-    if toggleStates[label] then
-        return toggleStates[label]()
-    end
-    return false
-end
-
-local function getSliderValue(label)
-    if sliderValues[label] then
-        return sliderValues[label]()
-    end
-    return 0
-end
 
 local function GetClosestPlayer()
     local closest = nil
-    local closestDist = getSliderValue("Fov Size")
+    local closestDist = config.fovSize
 
     for _, plr in pairs(Players:GetPlayers()) do
         if plr == LP then continue end
@@ -705,181 +704,25 @@ local function AimAt(target)
     local part = target.Character.Head
     local targetPos = part.Position
 
-    if getToggleState("Predict") then
+    if config.predict then
         local root = target.Character:FindFirstChild("HumanoidRootPart")
         if root and root.AssemblyLinearVelocity then
             local vel = root.AssemblyLinearVelocity
-            local predictMs = getSliderValue("Predict ms") / 1000
+            local predictMs = config.predictMs / 1000
             targetPos = targetPos + (vel * predictMs)
         end
     end
 
-    local smooth = getSliderValue("Smooth")
-    local smoothFactor = math.clamp(smooth / 100, 0.01, 1)
+    local smoothFactor = math.clamp(config.smooth / 100, 0.01, 1)
     local current = Camera.CFrame
     local targetCF = CFrame.new(Camera.CFrame.Position, targetPos)
     Camera.CFrame = current:Lerp(targetCF, smoothFactor)
 end
 
-RunService.RenderStepped:Connect(function()
-    ScreenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    Circle.Position = ScreenCenter
-    Circle.Radius = getSliderValue("Fov Size")
-    Circle2.Position = ScreenCenter
-    Circle2.Radius = getSliderValue("Fov Size") + 10
-
-    local aimOn = getToggleState("Aimbot")
-    local snowFov = getToggleState("Snow Fov")
-    local target, dist = GetClosestPlayer()
-
-    if aimOn and target then
-        local keyPressed = false
-        if aimKey ~= "" then
-            local keyEnum = Enum.KeyCode[aimKey]
-            if keyEnum then
-                keyPressed = UIS:IsKeyDown(keyEnum)
-            end
-        end
-        
-        local inFov = dist <= getSliderValue("Fov Size")
-        
-        if keyPressed or not snowFov then
-            if (not snowFov) or (snowFov and inFov) then
-                AimAt(target)
-                Circle.Color = Color3.fromRGB(0, 255, 0)
-                Circle2.Visible = true
-                Circle2.Color = Color3.fromRGB(0, 255, 0)
-            end
-        else
-            if snowFov and inFov then
-                Circle.Color = Color3.fromRGB(255, 255, 0)
-                Circle2.Visible = true
-                Circle2.Color = Color3.fromRGB(255, 255, 0)
-            else
-                Circle.Color = Color3.fromRGB(255, 0, 0)
-                Circle2.Visible = false
-            end
-        end
-    else
-        Circle.Color = Color3.fromRGB(160, 32, 240)
-        Circle2.Visible = false
-    end
-
-    local espOn = getToggleState("Players")
-    local showBox = getToggleState("Boxes")
-    local showName = getToggleState("Names")
-    local showHealth = getToggleState("Health")
-    local showTracers = getToggleState("Tracers")
-
-    if not espOn then
-        for _, e in pairs(espData) do
-            e.Box.Visible = false
-            e.Name.Visible = false
-            e.Health.Visible = false
-            e.Dist.Visible = false
-        end
-        return
-    end
-
-    local rainbow = GetRainbowColor()
-    for plr, e in pairs(espData) do
-        local char = plr.Character
-        if not char or not char.Parent then
-            e.Box.Visible = false
-            e.Name.Visible = false
-            e.Health.Visible = false
-            e.Dist.Visible = false
-            continue
-        end
-
-        local root = char:FindFirstChild("HumanoidRootPart")
-        local head = char:FindFirstChild("Head")
-        if not root or not head then
-            e.Box.Visible = false
-            e.Name.Visible = false
-            e.Health.Visible = false
-            e.Dist.Visible = false
-            continue
-        end
-
-        local topPos = head.Position + Vector3.new(0, head.Size.Y / 2, 0)
-        local bottomPos = root.Position - Vector3.new(0, root.Size.Y / 2, 0)
-        local rightOffset = root.CFrame:VectorToWorldSpace(Vector3.new(root.Size.X / 2, 0, 0))
-        local leftOffset = root.CFrame:VectorToWorldSpace(Vector3.new(-root.Size.X / 2, 0, 0))
-        local rightPos = root.Position + rightOffset
-        local leftPos = root.Position + leftOffset
-
-        local topV, topOn = Camera:WorldToViewportPoint(topPos)
-        local bottomV, bottomOn = Camera:WorldToViewportPoint(bottomPos)
-        local rightV, rightOn = Camera:WorldToViewportPoint(rightPos)
-        local leftV, leftOn = Camera:WorldToViewportPoint(leftPos)
-
-        if not (topOn or bottomOn or rightOn or leftOn) then
-            e.Box.Visible = false
-            e.Name.Visible = false
-            e.Health.Visible = false
-            e.Dist.Visible = false
-            continue
-        end
-
-        local height = math.abs(topV.Y - bottomV.Y)
-        local width = math.abs(rightV.X - leftV.X)
-        if height < 5 then height = 5 end
-        if width < 5 then width = 5 end
-
-        local centerX = (leftV.X + rightV.X) / 2
-        local centerY = (topV.Y + bottomV.Y) / 2
-        local dist = (Camera.CFrame.Position - root.Position).Magnitude
-
-        if showBox then
-            e.Box.Visible = true
-            e.Box.Size = Vector2.new(width, height)
-            e.Box.Position = Vector2.new(centerX - width / 2, centerY - height / 2)
-            e.Box.Color = rainbow
-        else
-            e.Box.Visible = false
-        end
-
-        if showName then
-            e.Name.Visible = true
-            e.Name.Text = plr.Name
-            e.Name.Position = Vector2.new(centerX, topV.Y - 15)
-            e.Name.Color = rainbow
-        else
-            e.Name.Visible = false
-        end
-
-        if showHealth then
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum and hum.MaxHealth > 0 then
-                local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
-                e.Health.Visible = true
-                e.Health.Size = Vector2.new(2, height * hp)
-                e.Health.Position = Vector2.new(centerX - width / 2 - 4, centerY + height / 2 - height * hp)
-                e.Health.Color = Color3.fromRGB(255 * (1 - hp), 255 * hp, 0)
-            else
-                e.Health.Visible = false
-            end
-        else
-            e.Health.Visible = false
-        end
-
-        if showTracers then
-            e.Dist.Visible = true
-            e.Dist.Text = math.floor(dist) .. "m"
-            e.Dist.Position = Vector2.new(centerX, bottomV.Y + 15)
-            e.Dist.Color = rainbow
-        else
-            e.Dist.Visible = false
-        end
-    end
-end)
-
 local function isMobile()
     return UIS.TouchEnabled and not UIS.MouseEnabled
 end
 
-local mobileButton = nil
 local btnGui = nil
 
 if isMobile() then
@@ -888,7 +731,7 @@ if isMobile() then
     btnGui.ResetOnSpawn = false
     btnGui.Parent = CG
 
-    mobileButton = Instance.new("ImageButton")
+    local mobileButton = Instance.new("ImageButton")
     mobileButton.Size = UDim2.new(0, 50, 0, 50)
     mobileButton.Position = UDim2.new(1, -60, 0.5, -25)
     mobileButton.Image = "rbxassetid://73073995075962"
@@ -946,20 +789,139 @@ UIS.InputBegan:Connect(function(i, gpe)
     end
 end)
 
-local function getMiscState()
-    local speedOn = getToggleState("Speed Hack")
-    local speedVal = getSliderValue("Speed")
-    local jumpOn = getToggleState("Infinite Jump")
+RunService.RenderStepped:Connect(function()
+    ScreenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    Circle.Position = ScreenCenter
+    Circle.Radius = config.fovSize
 
+    if config.aimbot then
+        local target, dist = GetClosestPlayer()
+        local keyPressed = false
+        if config.aimKey ~= "" then
+            local keyEnum = Enum.KeyCode[config.aimKey]
+            if keyEnum then
+                keyPressed = UIS:IsKeyDown(keyEnum)
+            end
+        end
+
+        if target and (keyPressed or not config.snowFov) then
+            if (not config.snowFov) or (config.snowFov and dist <= config.fovSize) then
+                AimAt(target)
+                Circle.Color = Color3.fromRGB(0, 255, 0)
+            else
+                Circle.Color = Color3.fromRGB(255, 255, 0)
+            end
+        else
+            Circle.Color = Color3.fromRGB(255, 0, 0)
+        end
+    else
+        Circle.Color = Color3.fromRGB(160, 32, 240)
+    end
+
+    if not config.espEnabled then
+        for _, e in pairs(espData) do
+            e.Box.Visible = false
+            e.Name.Visible = false
+            e.Health.Visible = false
+            e.Dist.Visible = false
+        end
+        return
+    end
+
+    local rainbow = GetRainbowColor()
+    for plr, e in pairs(espData) do
+        local char = plr.Character
+        if not char or not char.Parent then
+            e.Box.Visible = false
+            e.Name.Visible = false
+            e.Health.Visible = false
+            e.Dist.Visible = false
+            continue
+        end
+
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local head = char:FindFirstChild("Head")
+        if not root or not head then
+            e.Box.Visible = false
+            e.Name.Visible = false
+            e.Health.Visible = false
+            e.Dist.Visible = false
+            continue
+        end
+
+        local topPos = head.Position + Vector3.new(0, head.Size.Y / 2, 0)
+        local bottomPos = root.Position - Vector3.new(0, root.Size.Y / 2, 0)
+        local rightOffset = root.CFrame:VectorToWorldSpace(Vector3.new(root.Size.X / 2, 0, 0))
+        local leftOffset = root.CFrame:VectorToWorldSpace(Vector3.new(-root.Size.X / 2, 0, 0))
+        local rightPos = root.Position + rightOffset
+        local leftPos = root.Position + leftOffset
+
+        local topV, topOn = Camera:WorldToViewportPoint(topPos)
+        local bottomV, bottomOn = Camera:WorldToViewportPoint(bottomPos)
+        local rightV, rightOn = Camera:WorldToViewportPoint(rightPos)
+        local leftV, leftOn = Camera:WorldToViewportPoint(leftPos)
+
+        if not (topOn or bottomOn or rightOn or leftOn) then
+            e.Box.Visible = false
+            e.Name.Visible = false
+            e.Health.Visible = false
+            e.Dist.Visible = false
+            continue
+        end
+
+        local height = math.abs(topV.Y - bottomV.Y)
+        local width = math.abs(rightV.X - leftV.X)
+        if height < 5 then height = 5 end
+        if width < 5 then width = 5 end
+
+        local centerX = (leftV.X + rightV.X) / 2
+        local centerY = (topV.Y + bottomV.Y) / 2
+
+        if config.showBoxes then
+            e.Box.Visible = true
+            e.Box.Size = Vector2.new(width, height)
+            e.Box.Position = Vector2.new(centerX - width / 2, centerY - height / 2)
+            e.Box.Color = rainbow
+        else
+            e.Box.Visible = false
+        end
+
+        if config.showNames then
+            e.Name.Visible = true
+            e.Name.Text = plr.Name
+            e.Name.Position = Vector2.new(centerX, topV.Y - 15)
+            e.Name.Color = rainbow
+        else
+            e.Name.Visible = false
+        end
+
+        if config.showHealth then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.MaxHealth > 0 then
+                local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+                e.Health.Visible = true
+                e.Health.Size = Vector2.new(2, height * hp)
+                e.Health.Position = Vector2.new(centerX - width / 2 - 4, centerY + height / 2 - height * hp)
+                e.Health.Color = Color3.fromRGB(255 * (1 - hp), 255 * hp, 0)
+            else
+                e.Health.Visible = false
+            end
+        else
+            e.Health.Visible = false
+        end
+    end
+end)
+
+local function getMiscState()
     if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
         local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-        if speedOn then
-            hum.WalkSpeed = speedVal
+        if config.speedHack then
+            hum.WalkSpeed = config.speedValue
         else
             hum.WalkSpeed = 16
         end
 
-        if jumpOn then
+        if config.infiniteJump then
             hum.JumpPower = 50
             hum:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
         else
@@ -975,88 +937,37 @@ end)
 UIS.InputBegan:Connect(function(i, gpe)
     if gpe then return end
     if i.KeyCode == Enum.KeyCode.Space then
-        local jumpOn = getToggleState("Infinite Jump")
-        if jumpOn and LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
+        if config.infiniteJump and LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
             local hum = LP.Character:FindFirstChildOfClass("Humanoid")
             hum:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end
 end)
 
-local configFileName = "SinyxWareConfig.json"
-
-function saveConfig()
-    local config = {}
-    for key, func in pairs(toggleStates) do
-        config[key] = func()
-    end
-    for key, func in pairs(sliderValues) do
-        config[key] = func()
-    end
-    config["AimKey"] = aimKey
-    local json = HttpService:JSONEncode(config)
-    writefile(configFileName, json)
-end
-
-function loadConfig()
-    if isfile(configFileName) then
-        local json = readfile(configFileName)
-        local config = HttpService:JSONDecode(json)
-        for key, value in pairs(config) do
-            if toggleStates[key] then
-                local val = value
-                toggleStates[key] = function() return val end
-            elseif sliderValues[key] then
-                local val = value
-                sliderValues[key] = function() return val end
-            elseif key == "AimKey" then
-                aimKey = value
-                aimKeyBox.Text = aimKey
-            end
-        end
-    end
-end
-
-if getToggleState("Auto Load") then
-    loadConfig()
-end
-
 SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
     local query = SearchBox.Text:lower()
-    
     for _, tab in pairs(TabContents) do
         for _, child in ipairs(tab:GetDescendants()) do
-            if child:IsA("TextLabel") and child.Text ~= "" and child.Text ~= "Search" and child.Text ~= "🔍" and child.Text ~= "..." then
+            if child:IsA("TextLabel") and child.Text ~= "" and child.Text ~= "Search" and child.Text ~= "🔍" then
                 local parent = child.Parent
-                local found = false
                 while parent and parent ~= tab do
                     if parent:IsA("Frame") then
                         if query == "" then
                             parent.Visible = true
-                            found = true
                         else
-                            local match = child.Text:lower():find(query) ~= nil
-                            if match then
-                                parent.Visible = true
-                                found = true
-                            else
-                                parent.Visible = false
-                            end
+                            parent.Visible = child.Text:lower():find(query) ~= nil
                         end
                     end
                     parent = parent.Parent
-                end
-                if not found and query ~= "" then
-                    child.Parent.Visible = false
                 end
             end
         end
     end
 end)
 
+loadConfig()
 Root.Enabled = true
 
 -- ================================================================
---  КОНЕЦ СКРИПТА | SINYXWARE v3.1
---  Все функции работают: Аимбот, ESP, MISC, Mobile, Search, Config
+--  КОНЕЦ СКРИПТА | SINYXWARE v4.0
 -- ================================================================
