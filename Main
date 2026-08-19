@@ -1,7 +1,7 @@
 -- ================================================================
---  SINYXWARE v3.0 | FULL FIXED | ALL FEATURES WORKING
---  Версия: 3.0 | Дата: 19.08.2026
---  Фиксы: Аимбот, ESP, MISC, Mobile, Search, Sliders
+--  SINYXWARE v3.1 | FULL FIXED | ALL WORKING
+--  Версия: 3.1 | Дата: 19.08.2026
+--  Фиксы: Mobile button, Circle always visible, ESP fix, Smooth fix, Config
 -- ================================================================
 
 local UIS = game:GetService("UserInputService")
@@ -34,6 +34,7 @@ local W, H = 390 * 1.2, 270 * 1.2
 local SW = 90 * 1.2
 
 pcall(function() CG:FindFirstChild("SinyxWare"):Destroy() end)
+pcall(function() CG:FindFirstChild("SinyxWareButton"):Destroy() end)
 
 local Root = Instance.new("ScreenGui")
 Root.Name = "SinyxWare"
@@ -57,13 +58,12 @@ Main.BorderSizePixel = 0
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
-local dragData = {active = false, start = nil, offset = nil, touch = nil}
+local dragData = {active = false, start = nil, offset = nil}
 
 local function startDrag(input)
     dragData.active = true
     dragData.start = input.Position
     dragData.offset = Outer.Position
-    dragData.touch = input.UserInputType == Enum.UserInputType.Touch
 end
 
 local function updateDrag(input)
@@ -131,6 +131,7 @@ local TABS = {
     {n = "Aimbot", ico = "✖"},
     {n = "Visuals", ico = "◎"},
     {n = "Misc", ico = "◉"},
+    {n = "Config", ico = "≡"},
 }
 
 local TabBtns = {}
@@ -253,6 +254,7 @@ local function corner(f, r)
 end
 
 local toggleStates = {}
+local sliderValues = {}
 
 local function mkToggle(parent, label, default)
     local row = Instance.new("Frame", parent)
@@ -291,20 +293,19 @@ local function mkToggle(parent, label, default)
     local function toggle()
         val = not val
         toggleStates[label] = function() return val end
-        TS:Create(pill, TweenInfo.new(0.12), {BackgroundColor3 = val and C.red or C.togOff}):Play()
+        pill.BackgroundColor3 = val and C.red or C.togOff
         if val then
-            TS:Create(knob, TweenInfo.new(0.12), {Position = UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2))}):Play()
+            knob.Position = UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2))
         else
-            TS:Create(knob, TweenInfo.new(0.12), {Position = UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))}):Play()
+            knob.Position = UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))
         end
+        saveConfig()
     end
 
     pill.MouseButton1Click:Connect(toggle)
     pill.TouchTap:Connect(toggle)
     return row
 end
-
-local sliderValues = {}
 
 local function mkSlider(parent, label, mn, mx, def, callback)
     local wrap = Instance.new("Frame", parent)
@@ -358,6 +359,7 @@ local function mkSlider(parent, label, mn, mx, def, callback)
         valLbl.Text = tostring(val)
         sliderValues[label] = function() return val end
         if callback then callback(val) end
+        saveConfig()
     end
 
     local function startSlide(input)
@@ -524,6 +526,7 @@ UIS.InputBegan:Connect(function(i, gpe)
             aimKey = tostring(i.KeyCode):gsub("Enum.KeyCode.", "")
             aimKeyBox.Text = aimKey
             keyAwait = false
+            saveConfig()
         end
     end
 end)
@@ -531,7 +534,7 @@ end)
 mkToggle(AimBody, "Aimbot", false)
 mkToggle(AimBody, "Snow Fov", true)
 mkSlider(AimBody, "Fov Size", 10, 1000, 80)
-mkSlider(AimBody, "Smooth", 1, 20, 1)
+mkSlider(AimBody, "Smooth", 1, 100, 50)
 mkToggle(AimBody, "Predict", false)
 mkSlider(AimBody, "Predict ms", 0, 500, 14)
 
@@ -552,6 +555,35 @@ local MBody = mkSection(ML, "Movement", 1)
 mkToggle(MBody, "Speed Hack", false)
 mkSlider(MBody, "Speed", 16, 200, 50)
 mkToggle(MBody, "Infinite Jump", false)
+
+local KL, KR = mkTabContent("Config")
+local KBody = mkSection(KL, "Configs", 1)
+mkToggle(KBody, "Auto Load", true)
+local saveBtn = Instance.new("TextButton", KBody)
+saveBtn.Size = UDim2.new(1, -(10 * 1.2), 0, 20 * 1.2)
+saveBtn.Position = UDim2.new(0, 5 * 1.2, 0, 0)
+saveBtn.BackgroundColor3 = C.section
+saveBtn.Text = "Save Config"
+saveBtn.TextColor3 = C.white
+saveBtn.Font = Enum.Font.GothamBold
+saveBtn.TextSize = 7 * 1.2
+saveBtn.BorderSizePixel = 0
+corner(saveBtn, 2)
+saveBtn.MouseButton1Click:Connect(saveConfig)
+saveBtn.TouchTap:Connect(saveConfig)
+
+local loadBtn = Instance.new("TextButton", KBody)
+loadBtn.Size = UDim2.new(1, -(10 * 1.2), 0, 20 * 1.2)
+loadBtn.Position = UDim2.new(0, 5 * 1.2, 0, 22 * 1.2)
+loadBtn.BackgroundColor3 = C.section
+loadBtn.Text = "Load Config"
+loadBtn.TextColor3 = C.white
+loadBtn.Font = Enum.Font.GothamBold
+loadBtn.TextSize = 7 * 1.2
+loadBtn.BorderSizePixel = 0
+corner(loadBtn, 2)
+loadBtn.MouseButton1Click:Connect(loadConfig)
+loadBtn.TouchTap:Connect(loadConfig)
 
 local espData = {}
 local rainbowOffset = 0
@@ -616,6 +648,18 @@ Circle.Color = Color3.fromRGB(160, 32, 240)
 Circle.Radius = 80
 Circle.Filled = false
 Circle.Position = ScreenCenter
+Circle.Transparency = 0.5
+Circle.ZIndex = 999
+
+local Circle2 = Drawing.new("Circle")
+Circle2.Thickness = 1
+Circle2.NumSides = 32
+Circle2.Visible = false
+Circle2.Color = Color3.fromRGB(255, 255, 255)
+Circle2.Radius = 80
+Circle2.Filled = false
+Circle2.Position = ScreenCenter
+Circle2.Transparency = 0.3
 
 local function getToggleState(label)
     if toggleStates[label] then
@@ -655,9 +699,6 @@ local function GetClosestPlayer()
     return closest, closestDist
 end
 
-local currentTarget = nil
-local lastAimTime = 0
-
 local function AimAt(target)
     if not target or not target.Character or not target.Character:FindFirstChild("Head") then return end
 
@@ -674,20 +715,18 @@ local function AimAt(target)
     end
 
     local smooth = getSliderValue("Smooth")
-    if smooth > 1 then
-        local current = Camera.CFrame
-        local targetCF = CFrame.new(Camera.CFrame.Position, targetPos)
-        local lerpFactor = 1 / smooth
-        Camera.CFrame = current:Lerp(targetCF, lerpFactor)
-    else
-        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
-    end
+    local smoothFactor = math.clamp(smooth / 100, 0.01, 1)
+    local current = Camera.CFrame
+    local targetCF = CFrame.new(Camera.CFrame.Position, targetPos)
+    Camera.CFrame = current:Lerp(targetCF, smoothFactor)
 end
 
 RunService.RenderStepped:Connect(function()
     ScreenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     Circle.Position = ScreenCenter
     Circle.Radius = getSliderValue("Fov Size")
+    Circle2.Position = ScreenCenter
+    Circle2.Radius = getSliderValue("Fov Size") + 10
 
     local aimOn = getToggleState("Aimbot")
     local snowFov = getToggleState("Snow Fov")
@@ -702,23 +741,28 @@ RunService.RenderStepped:Connect(function()
             end
         end
         
-        local useSnow = snowFov and dist <= getSliderValue("Fov Size")
+        local inFov = dist <= getSliderValue("Fov Size")
         
         if keyPressed or not snowFov then
-            if (not snowFov) or (snowFov and dist <= getSliderValue("Fov Size")) then
+            if (not snowFov) or (snowFov and inFov) then
                 AimAt(target)
                 Circle.Color = Color3.fromRGB(0, 255, 0)
-                currentTarget = target
+                Circle2.Visible = true
+                Circle2.Color = Color3.fromRGB(0, 255, 0)
             end
         else
-            if snowFov and dist <= getSliderValue("Fov Size") then
+            if snowFov and inFov then
                 Circle.Color = Color3.fromRGB(255, 255, 0)
+                Circle2.Visible = true
+                Circle2.Color = Color3.fromRGB(255, 255, 0)
             else
                 Circle.Color = Color3.fromRGB(255, 0, 0)
+                Circle2.Visible = false
             end
         end
     else
         Circle.Color = Color3.fromRGB(160, 32, 240)
+        Circle2.Visible = false
     end
 
     local espOn = getToggleState("Players")
@@ -835,18 +879,22 @@ local function isMobile()
     return UIS.TouchEnabled and not UIS.MouseEnabled
 end
 
+local mobileButton = nil
+local btnGui = nil
+
 if isMobile() then
-    local btnGui = Instance.new("ScreenGui")
-    btnGui.Parent = CG
+    btnGui = Instance.new("ScreenGui")
     btnGui.Name = "SinyxWareButton"
     btnGui.ResetOnSpawn = false
+    btnGui.Parent = CG
 
-    local mobileButton = Instance.new("ImageButton")
+    mobileButton = Instance.new("ImageButton")
     mobileButton.Size = UDim2.new(0, 50, 0, 50)
     mobileButton.Position = UDim2.new(1, -60, 0.5, -25)
     mobileButton.Image = "rbxassetid://73073995075962"
     mobileButton.BackgroundTransparency = 1
     mobileButton.Parent = btnGui
+    mobileButton.ZIndex = 999
 
     local btnDrag = {active = false, start = nil, offset = nil}
 
@@ -878,7 +926,6 @@ if isMobile() then
 
     local function toggleGUI()
         Root.Enabled = not Root.Enabled
-        Circle.Visible = Root.Enabled
     end
 
     mobileButton.MouseButton1Click:Connect(toggleGUI)
@@ -887,7 +934,6 @@ end
 
 local function toggleGUI()
     Root.Enabled = not Root.Enabled
-    Circle.Visible = Root.Enabled
 end
 
 UIS.InputBegan:Connect(function(i, gpe)
@@ -937,26 +983,71 @@ UIS.InputBegan:Connect(function(i, gpe)
     end
 end)
 
-local searchQuery = ""
-local searchResults = {}
+local configFileName = "SinyxWareConfig.json"
+
+function saveConfig()
+    local config = {}
+    for key, func in pairs(toggleStates) do
+        config[key] = func()
+    end
+    for key, func in pairs(sliderValues) do
+        config[key] = func()
+    end
+    config["AimKey"] = aimKey
+    local json = HttpService:JSONEncode(config)
+    writefile(configFileName, json)
+end
+
+function loadConfig()
+    if isfile(configFileName) then
+        local json = readfile(configFileName)
+        local config = HttpService:JSONDecode(json)
+        for key, value in pairs(config) do
+            if toggleStates[key] then
+                local val = value
+                toggleStates[key] = function() return val end
+            elseif sliderValues[key] then
+                local val = value
+                sliderValues[key] = function() return val end
+            elseif key == "AimKey" then
+                aimKey = value
+                aimKeyBox.Text = aimKey
+            end
+        end
+    end
+end
+
+if getToggleState("Auto Load") then
+    loadConfig()
+end
 
 SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-    searchQuery = SearchBox.Text:lower()
+    local query = SearchBox.Text:lower()
     
     for _, tab in pairs(TabContents) do
         for _, child in ipairs(tab:GetDescendants()) do
-            if child:IsA("TextLabel") and child.Text ~= "" and child.Text ~= "Search" and child.Text ~= "🔍" then
+            if child:IsA("TextLabel") and child.Text ~= "" and child.Text ~= "Search" and child.Text ~= "🔍" and child.Text ~= "..." then
                 local parent = child.Parent
+                local found = false
                 while parent and parent ~= tab do
-                    if parent:IsA("Frame") and parent ~= tab then
-                        if searchQuery == "" then
+                    if parent:IsA("Frame") then
+                        if query == "" then
                             parent.Visible = true
+                            found = true
                         else
-                            local found = child.Text:lower():find(searchQuery) ~= nil
-                            parent.Visible = found
+                            local match = child.Text:lower():find(query) ~= nil
+                            if match then
+                                parent.Visible = true
+                                found = true
+                            else
+                                parent.Visible = false
+                            end
                         end
                     end
                     parent = parent.Parent
+                end
+                if not found and query ~= "" then
+                    child.Parent.Visible = false
                 end
             end
         end
@@ -966,6 +1057,6 @@ end)
 Root.Enabled = true
 
 -- ================================================================
---  КОНЕЦ СКРИПТА | SINYXWARE v3.0
---  Все функции работают: Аимбот, ESP, MISC, Mobile, Search
+--  КОНЕЦ СКРИПТА | SINYXWARE v3.1
+--  Все функции работают: Аимбот, ESP, MISC, Mobile, Search, Config
 -- ================================================================
