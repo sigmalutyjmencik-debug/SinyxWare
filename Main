@@ -32,8 +32,8 @@ local C = {
 }
 
 -- размеры ×1.2
-local W, H = 390 * 1.2, 270 * 1.2  -- 468x324
-local SW    = 90 * 1.2             -- 108
+local W, H = 390 * 1.2, 270 * 1.2
+local SW    = 90 * 1.2
 
 -- ================================================================
 --  ROOT GUI
@@ -47,7 +47,6 @@ Root.IgnoreGuiInset = true
 Root.ZIndexBehavior = Enum.ZIndexBehavior.Global
 Root.Parent = CG
 
--- Красная внешняя рамка
 local Outer = Instance.new("Frame", Root)
 Outer.Size     = UDim2.new(0, W, 0, H)
 Outer.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
@@ -55,7 +54,6 @@ Outer.BackgroundColor3 = C.red
 Outer.BorderSizePixel  = 0
 Instance.new("UICorner", Outer).CornerRadius = UDim.new(0, 4)
 
--- Главное окно
 local Main = Instance.new("Frame", Outer)
 Main.Size     = UDim2.new(1, -4, 1, -4)
 Main.Position = UDim2.new(0, 2, 0, 2)
@@ -65,7 +63,7 @@ Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
 -- ================================================================
---  DRAG (за весь Main)
+--  DRAG
 -- ================================================================
 local drag, dstart, ostart = false, nil, nil
 Main.InputBegan:Connect(function(i)
@@ -102,7 +100,6 @@ SDiv.Position = UDim2.new(0, SW, 0, 0)
 SDiv.BackgroundColor3 = C.border
 SDiv.BorderSizePixel  = 0
 
--- Заголовок "SinyxWare" (синий + красный)
 local TitleF = Instance.new("Frame", Sidebar)
 TitleF.Size = UDim2.new(1, 0, 0, 26 * 1.2)
 TitleF.BackgroundTransparency = 1
@@ -116,14 +113,12 @@ TitleL.Font = Enum.Font.GothamBold
 TitleL.TextSize = 12 * 1.2
 TitleL.TextXAlignment = Enum.TextXAlignment.Center
 
--- Разделитель
 local TDiv = Instance.new("Frame", Sidebar)
 TDiv.Size = UDim2.new(1, 0, 0, 1)
 TDiv.Position = UDim2.new(0, 0, 0, 26 * 1.2)
 TDiv.BackgroundColor3 = C.border
 TDiv.BorderSizePixel  = 0
 
--- Табы
 local TABS = {
     { n = "Combat",  ico = "✖" },
     { n = "Visuals", ico = "◎" },
@@ -206,7 +201,6 @@ ContentArea.Position = UDim2.new(0, SW+1, 0, 0)
 ContentArea.BackgroundTransparency = 1
 ContentArea.ClipsDescendants = true
 
--- Топбар поиск
 local TopBar = Instance.new("Frame", ContentArea)
 TopBar.Size = UDim2.new(1, 0, 0, 21 * 1.2)
 TopBar.BackgroundColor3 = C.sidebar
@@ -251,16 +245,13 @@ TopDiv.BackgroundColor3 = C.border
 TopDiv.BorderSizePixel  = 0
 
 -- ================================================================
---  УБРАНА НАДПИСЬ "Rusted" — БОТБАР УДАЛЁН
--- ================================================================
-
--- ================================================================
 --  ХЕЛПЕРЫ
 -- ================================================================
-local function corner(f, r) Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2) end
+local function corner(f, r) 
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2) 
+end
 
--- Тоггл pill
-local function mkToggle(parent, label, default, callback)
+local function mkToggle(parent, label, default)
     local row = Instance.new("Frame", parent)
     row.Size = UDim2.new(1, 0, 0, 16 * 1.2)
     row.BackgroundTransparency = 1
@@ -286,7 +277,11 @@ local function mkToggle(parent, label, default, callback)
 
     local knob = Instance.new("Frame", pill)
     knob.Size = UDim2.new(0, 8 * 1.2, 0, 8 * 1.2)
-    knob.Position = default and UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2)) or UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))
+    if default then
+        knob.Position = UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2))
+    else
+        knob.Position = UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))
+    end
     knob.BackgroundColor3 = C.white
     knob.BorderSizePixel = 0
     corner(knob, 4)
@@ -295,16 +290,16 @@ local function mkToggle(parent, label, default, callback)
     pill.MouseButton1Click:Connect(function()
         val = not val
         TS:Create(pill, TweenInfo.new(0.12), { BackgroundColor3 = val and C.red or C.togOff }):Play()
-        TS:Create(knob, TweenInfo.new(0.12), {
-            Position = val and UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2)) or UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2))
-        }):Play()
-        if callback then callback(val) end
+        if val then
+            TS:Create(knob, TweenInfo.new(0.12), { Position = UDim2.new(1, -(10 * 1.2), 0.5, -(4 * 1.2)) }):Play()
+        else
+            TS:Create(knob, TweenInfo.new(0.12), { Position = UDim2.new(0, 2 * 1.2, 0.5, -(4 * 1.2)) }):Play()
+        end
     end)
-    return row
+    return row, function() return val end
 end
 
--- Слайдер с реальным вводом
-local function mkSlider(parent, label, mn, mx, def, callback)
+local function mkSlider(parent, label, mn, mx, def)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 26 * 1.2)
     wrap.BackgroundTransparency = 1
@@ -352,7 +347,6 @@ local function mkSlider(parent, label, mn, mx, def, callback)
         val = math.floor(mn + (mx - mn) * pct + 0.5)
         fill.Size = UDim2.new(pct, 0, 1, 0)
         valLbl.Text = ("%g/%g"):format(val, mx)
-        if callback then callback(val) end
     end
 
     track.InputBegan:Connect(function(i)
@@ -373,7 +367,6 @@ local function mkSlider(parent, label, mn, mx, def, callback)
     return wrap
 end
 
--- Дропдаун
 local function mkDropdown(parent, label, options, default)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 28 * 1.2)
@@ -417,7 +410,9 @@ local function mkDropdown(parent, label, options, default)
     arr.TextSize = 6 * 1.2
 
     local idx = 1
-    for i, v in ipairs(options) do if v == default then idx = i end end
+    for i, v in ipairs(options) do 
+        if v == default then idx = i end 
+    end
     btn.MouseButton1Click:Connect(function()
         idx = (idx % #options) + 1
         cur.Text = options[idx]
@@ -426,7 +421,6 @@ local function mkDropdown(parent, label, options, default)
     return wrap
 end
 
--- Секция
 local function mkSection(parent, title, lo)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, -(6 * 1.2), 0, 0)
@@ -563,15 +557,15 @@ mkToggle(HitBody, "Big Head", true)
 mkSlider(HitBody, "Size", 1, 10, 10)
 
 -- ================================================================
---  VISUALS TAB (ESP + настройки)
+--  VISUALS TAB
 -- ================================================================
 local VL, VR = mkTabContent("Visuals")
 local VBody = mkSection(VL, "ESP", 1)
-local espEnabled = mkToggle(VBody, "Players", true)
-local espBoxes = mkToggle(VBody, "Boxes", true)
-local espNames = mkToggle(VBody, "Names", true)
-local espHealth = mkToggle(VBody, "Health", true)
-local espTracers = mkToggle(VBody, "Tracers", false)
+mkToggle(VBody, "Players", true)
+mkToggle(VBody, "Boxes", true)
+mkToggle(VBody, "Names", true)
+mkToggle(VBody, "Health", true)
+mkToggle(VBody, "Tracers", false)
 
 -- ================================================================
 --  MISC TAB
@@ -592,7 +586,7 @@ mkToggle(KBody, "Auto Load", false)
 mkToggle(KBody, "Save on Exit", false)
 
 -- ================================================================
---  ВСТРОЕННЫЙ ESP (из твоего кода, с привязкой к тогглам)
+--  ESP
 -- ================================================================
 local espData = {}
 local rainbowOffset = 0
@@ -600,7 +594,7 @@ local rainbowOffset = 0
 local function GetRainbowColor()
     rainbowOffset = (rainbowOffset + 0.005) % 1
     return Color3.fromHSV(rainbowOffset, 1, 1)
-}
+end
 
 local function CreateESP(player)
     if player == LP or espData[player] then return end
@@ -648,30 +642,58 @@ for _, plr in pairs(Players:GetPlayers()) do CreateESP(plr) end
 Players.PlayerAdded:Connect(CreateESP)
 Players.PlayerRemoving:Connect(RemoveESP)
 
--- Получаем значения тогглов (костыль, но работает)
-local function getToggleState(parent, label)
-    for _, child in ipairs(parent:GetChildren()) do
-        if child:IsA("Frame") then
-            local lbl = child:FindFirstChildOfClass("TextLabel")
-            if lbl and lbl.Text == label then
+local espEnabled = true
+local showBox = true
+local showName = true
+local showHealth = true
+local showTracers = false
+
+for _, child in ipairs(VBody:GetChildren()) do
+    if child:IsA("Frame") then
+        local lbl = child:FindFirstChildOfClass("TextLabel")
+        if lbl then
+            if lbl.Text == "Players" then
                 local pill = child:FindFirstChildOfClass("TextButton")
                 if pill then
-                    return pill.BackgroundColor3 == C.red
+                    pill.MouseButton1Click:Connect(function()
+                        espEnabled = not espEnabled
+                    end)
+                end
+            elseif lbl.Text == "Boxes" then
+                local pill = child:FindFirstChildOfClass("TextButton")
+                if pill then
+                    pill.MouseButton1Click:Connect(function()
+                        showBox = not showBox
+                    end)
+                end
+            elseif lbl.Text == "Names" then
+                local pill = child:FindFirstChildOfClass("TextButton")
+                if pill then
+                    pill.MouseButton1Click:Connect(function()
+                        showName = not showName
+                    end)
+                end
+            elseif lbl.Text == "Health" then
+                local pill = child:FindFirstChildOfClass("TextButton")
+                if pill then
+                    pill.MouseButton1Click:Connect(function()
+                        showHealth = not showHealth
+                    end)
+                end
+            elseif lbl.Text == "Tracers" then
+                local pill = child:FindFirstChildOfClass("TextButton")
+                if pill then
+                    pill.MouseButton1Click:Connect(function()
+                        showTracers = not showTracers
+                    end)
                 end
             end
         end
     end
-    return false
 end
 
 RunService.RenderStepped:Connect(function()
-    local enabled = getToggleState(VBody, "Players")
-    local showBox = getToggleState(VBody, "Boxes")
-    local showName = getToggleState(VBody, "Names")
-    local showHealth = getToggleState(VBody, "Health")
-    local showTracers = getToggleState(VBody, "Tracers")
-
-    if not enabled then
+    if not espEnabled then
         for _, e in pairs(espData) do
             e.Box.Visible = false
             e.Name.Visible = false
@@ -776,7 +798,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================================
---  HIDE / SHOW — Insert
+--  HIDE / SHOW
 -- ================================================================
 local visible = true
 UIS.InputBegan:Connect(function(i, gpe)
@@ -787,4 +809,4 @@ UIS.InputBegan:Connect(function(i, gpe)
     end
 end)
 
-print("[SinyxWare] ✓ Загружен. Insert = скрыть/показать. ESP на вкладке Visuals.")
+print("[SinyxWare] ✓ Загружен. Insert = скрыть/показать.")
