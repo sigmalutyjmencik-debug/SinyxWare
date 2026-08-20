@@ -1,5 +1,5 @@
 -- ================================================================
---  SINYXWARE GUI v4 | Полный функционал + Градиенты + Мобила
+--  SINYXWARE GUI v5 | ПОЛНОСТЬЮ РАБОЧИЙ
 --  Автор: GothbreachHelper
 -- ================================================================
 
@@ -178,7 +178,7 @@ task.spawn(function()
 end)
 
 -- ================================================================
---  ЦВЕТА (РОЗОВЫЙ ГРАДИЕНТ + АКЦЕНТ)
+--  ЦВЕТА
 -- ================================================================
 local C = {
     bg       = Color3.fromRGB(30, 15, 25),
@@ -208,7 +208,6 @@ Root.Parent = CG
 local W, H = 390, 270
 local SW = 90
 
--- Внешняя рамка с градиентом
 local Outer = Instance.new("Frame", Root)
 Outer.Size = UDim2.new(0, W, 0, H)
 Outer.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
@@ -221,7 +220,6 @@ gradOuter.Color = ColorSequence.new{
 }
 Instance.new("UICorner", Outer).CornerRadius = UDim.new(0, 4)
 
--- Главное окно
 local Main = Instance.new("Frame", Outer)
 Main.Size = UDim2.new(1, -4, 1, -4)
 Main.Position = UDim2.new(0, 2, 0, 2)
@@ -279,7 +277,6 @@ SDiv.Position = UDim2.new(0, SW, 0, 0)
 SDiv.BackgroundColor3 = C.border
 SDiv.BorderSizePixel = 0
 
--- Заголовок
 local TitleF = Instance.new("Frame", Sidebar)
 TitleF.Size = UDim2.new(1, 0, 0, 26)
 TitleF.BackgroundTransparency = 1
@@ -299,7 +296,6 @@ TDiv.Position = UDim2.new(0, 0, 0, 26)
 TDiv.BackgroundColor3 = C.border
 TDiv.BorderSizePixel = 0
 
--- Табы
 local TABS = {
     { n = "Home",    ico = "⌂" },
     { n = "Combat",  ico = "✖" },
@@ -380,7 +376,6 @@ ContentArea.Position = UDim2.new(0, SW+1, 0, 0)
 ContentArea.BackgroundTransparency = 1
 ContentArea.ClipsDescendants = true
 
--- Топбар
 local TopBar = Instance.new("Frame", ContentArea)
 TopBar.Size = UDim2.new(1, 0, 0, 21)
 TopBar.BackgroundColor3 = C.sidebar
@@ -429,7 +424,6 @@ TopDiv.Position = UDim2.new(0, 0, 0, 21)
 TopDiv.BackgroundColor3 = C.border
 TopDiv.BorderSizePixel = 0
 
--- Нижняя строка
 local BotBar = Instance.new("Frame", Main)
 BotBar.Size = UDim2.new(1, -SW, 0, 14)
 BotBar.Position = UDim2.new(0, SW, 1, -14)
@@ -463,7 +457,6 @@ local function corner(f, r)
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2)
 end
 
--- Тоггл с анимацией
 local function mkToggle(parent, label, default, callback)
     local row = Instance.new("Frame", parent)
     row.Size = UDim2.new(1, 0, 0, 16)
@@ -507,7 +500,6 @@ local function mkToggle(parent, label, default, callback)
     return row, function() return val end
 end
 
--- Слайдер
 local function mkSlider(parent, label, mn, mx, def, callback)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 26)
@@ -579,7 +571,6 @@ local function mkSlider(parent, label, mn, mx, def, callback)
     return wrap, function() return val end
 end
 
--- Секция
 local function mkSection(parent, title, lo)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, -6, 0, 0)
@@ -640,7 +631,6 @@ local function mkSection(parent, title, lo)
     return body
 end
 
--- Создание вкладки
 local function mkTabContent(name)
     local f = Instance.new("ScrollingFrame", ContentArea)
     f.Size = UDim2.new(1, 0, 1, -23)
@@ -694,6 +684,16 @@ local snowButton = nil
 local lockTarget = nil
 
 -- ================================================================
+--  ПЕРЕМЕННЫЕ ДЛЯ MISC
+-- ================================================================
+local speedHackEnabled = false
+local speedValue = 50
+local infJumpEnabled = false
+local noClipEnabled = false
+local originalWalkSpeed = 16
+local originalJumpPower = 50
+
+-- ================================================================
 --  HOME TAB
 -- ================================================================
 local HL, HR = mkTabContent("Home")
@@ -732,10 +732,8 @@ infoText.LineHeight = 1.2
 -- ================================================================
 local CL, CR = mkTabContent("Combat")
 
--- Левая колонка
 local aimSection = mkSection(CL, "Aimbot Settings", 1)
 
--- Включение аимбота
 local aimToggle, getAim = mkToggle(aimSection, "Enable Aimbot", false, function(val)
     aimbotEnabled = val
     if not val then
@@ -744,27 +742,23 @@ local aimToggle, getAim = mkToggle(aimSection, "Enable Aimbot", false, function(
     end
 end)
 
--- Показ кружка
 local circleToggle, getCircle = mkToggle(aimSection, "Show Circle", false, function(val)
     aimbotCircleEnabled = val
 end)
 
--- Слайдер размера кружка
 local circleSlider, getCircleRad = mkSlider(aimSection, "Circle Size", 10, 500, 50, function(val)
     circleRadius = val
 end)
 
--- Слайдер Smooth
 local smoothSlider, getSmooth = mkSlider(aimSection, "Smooth", 1, 100, 50, function(val)
     smoothness = val
 end)
 
--- Слайдер Prediction
 local predSlider, getPred = mkSlider(aimSection, "Prediction", 0, 100, 0, function(val)
     prediction = val / 1000
 end)
 
--- Выбор части тела
+-- Dropdown
 local function mkDropdown(parent, label, options, default)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 28)
@@ -823,14 +817,18 @@ end
 mkDropdown(aimSection, "Target Part", {"Head", "Torso", "HumanoidRootPart"}, "Head")
 
 -- ================================================================
---  VISUALS TAB (ESP)
+--  VISUALS TAB (ESP С УПРАВЛЕНИЕМ)
 -- ================================================================
 local VL, VR = mkTabContent("Visuals")
 
 local espSection = mkSection(VL, "ESP Settings", 1)
 
 local espEnabled = false
-local espToggles = {}
+local espShowBox = false
+local espShowName = false
+local espShowHP = false
+local espShowDist = false
+local espShowTracer = false
 
 local espToggle, getEsp = mkToggle(espSection, "Enable ESP", false, function(val)
     espEnabled = val
@@ -843,6 +841,29 @@ local espToggle, getEsp = mkToggle(espSection, "Enable ESP", false, function(val
     end
 end)
 
+local boxToggle, getBox = mkToggle(espSection, "Show Boxes", true, function(val)
+    espShowBox = val
+end)
+
+local nameToggle, getName = mkToggle(espSection, "Show Names", true, function(val)
+    espShowName = val
+end)
+
+local hpToggle, getHP = mkToggle(espSection, "Show HP", true, function(val)
+    espShowHP = val
+end)
+
+local distToggle, getDist = mkToggle(espSection, "Show Distance", true, function(val)
+    espShowDist = val
+end)
+
+local tracerToggle, getTracer = mkToggle(espSection, "Show Tracers", true, function(val)
+    espShowTracer = val
+end)
+
+-- ================================================================
+--  ESP ЛОГИКА
+-- ================================================================
 local function getRainbowColor(speed)
     local frequency = speed or 2
     local time = tick() * frequency
@@ -967,40 +988,66 @@ local function createESP(player)
 
             local rainbow = getRainbowColor(2)
 
-            box.Size = Vector2.new(boxWidth, boxHeight)
-            box.Position = Vector2.new(boxX, boxY)
-            box.Color = rainbow
-            box.Visible = true
-
-            nameLabel.Text = player.Name
-            nameLabel.Position = Vector2.new(centerPos.X, boxY - 16)
-            nameLabel.Color = rainbow
-            nameLabel.Visible = true
-
-            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                local distance = (rootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
-                distLabel.Text = math.floor(distance) .. " studs"
+            -- Box
+            if espShowBox then
+                box.Size = Vector2.new(boxWidth, boxHeight)
+                box.Position = Vector2.new(boxX, boxY)
+                box.Color = rainbow
+                box.Visible = true
             else
-                distLabel.Text = "--- studs"
+                box.Visible = false
             end
-            distLabel.Position = Vector2.new(centerPos.X, boxY + boxHeight + 4)
-            distLabel.Color = rainbow
-            distLabel.Visible = true
 
-            local hpHeight = boxHeight * (humanoid.Health / humanoid.MaxHealth)
-            hpBg.Size = Vector2.new(3, boxHeight)
-            hpBg.Position = Vector2.new(boxX - 6, boxY)
-            hpBg.Visible = true
+            -- Name
+            if espShowName then
+                nameLabel.Text = player.Name
+                nameLabel.Position = Vector2.new(centerPos.X, boxY - 16)
+                nameLabel.Color = rainbow
+                nameLabel.Visible = true
+            else
+                nameLabel.Visible = false
+            end
 
-            hpBar.Size = Vector2.new(3, hpHeight)
-            hpBar.Position = Vector2.new(boxX - 6, boxY + (boxHeight - hpHeight))
-            hpBar.Visible = true
+            -- Distance
+            if espShowDist then
+                if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                    local distance = (rootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+                    distLabel.Text = math.floor(distance) .. " studs"
+                else
+                    distLabel.Text = "--- studs"
+                end
+                distLabel.Position = Vector2.new(centerPos.X, boxY + boxHeight + 4)
+                distLabel.Color = rainbow
+                distLabel.Visible = true
+            else
+                distLabel.Visible = false
+            end
 
-            local isVisible = checkVisibility(character)
-            tracer.Color = isVisible and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-            tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-            tracer.To = Vector2.new(headPos.X, headPos.Y)
-            tracer.Visible = true
+            -- HP
+            if espShowHP then
+                local hpHeight = boxHeight * (humanoid.Health / humanoid.MaxHealth)
+                hpBg.Size = Vector2.new(3, boxHeight)
+                hpBg.Position = Vector2.new(boxX - 6, boxY)
+                hpBg.Visible = true
+
+                hpBar.Size = Vector2.new(3, hpHeight)
+                hpBar.Position = Vector2.new(boxX - 6, boxY + (boxHeight - hpHeight))
+                hpBar.Visible = true
+            else
+                hpBg.Visible = false
+                hpBar.Visible = false
+            end
+
+            -- Tracer
+            if espShowTracer then
+                local isVisible = checkVisibility(character)
+                tracer.Color = isVisible and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                tracer.To = Vector2.new(headPos.X, headPos.Y)
+                tracer.Visible = true
+            else
+                tracer.Visible = false
+            end
         else
             box.Visible = false
             hpBg.Visible = false
@@ -1018,21 +1065,222 @@ Players.PlayerAdded:Connect(function(player)
     end
 end)
 
+for _, player in ipairs(Players:GetPlayers()) do
+    if espEnabled and player ~= LP then
+        createESP(player)
+    end
+end
+
 -- ================================================================
---  MISC TAB
+--  MISC TAB (РАБОЧИЕ ФУНКЦИИ)
 -- ================================================================
 local ML, MR = mkTabContent("Misc")
 
 local moveSection = mkSection(ML, "Movement", 1)
 
-mkToggle(moveSection, "Speed Hack", false)
-mkSlider(moveSection, "Speed Value", 8, 250, 50)
+-- Speed Hack
+local speedToggle, getSpeedToggle = mkToggle(moveSection, "Speed Hack", false, function(val)
+    speedHackEnabled = val
+    local char = LP.Character
+    if char and char:FindFirstChild("Humanoid") then
+        if val then
+            char.Humanoid.WalkSpeed = speedValue
+        else
+            char.Humanoid.WalkSpeed = originalWalkSpeed
+        end
+    end
+end)
 
-mkToggle(moveSection, "Infinite Jump", false)
-mkToggle(moveSection, "No Clip", false)
+local speedSlider, getSpeedVal = mkSlider(moveSection, "Speed Value", 8, 250, 50, function(val)
+    speedValue = val
+    if speedHackEnabled then
+        local char = LP.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = val
+        end
+    end
+end)
+
+-- Infinite Jump
+local jumpToggle, getJumpToggle = mkToggle(moveSection, "Infinite Jump", false, function(val)
+    infJumpEnabled = val
+end)
+
+-- No Clip
+local clipToggle, getClipToggle = mkToggle(moveSection, "No Clip", false, function(val)
+    noClipEnabled = val
+    if val then
+        local char = LP.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    else
+        local char = LP.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end)
 
 -- ================================================================
---  МОБИЛЬНЫЕ КНОПКИ (Если устройство мобильное)
+--  MISC ЛОГИКА (RenderStepped)
+-- ================================================================
+RunService.RenderStepped:Connect(function()
+    local char = LP.Character
+    if not char then return end
+
+    -- Infinite Jump
+    if infJumpEnabled then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.JumpPower = 9999
+        end
+    else
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.JumpPower = originalJumpPower
+        end
+    end
+
+    -- No Clip
+    if noClipEnabled then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- Сброс при респавне
+LP.CharacterAdded:Connect(function(char)
+    task.wait(0.5)
+    if speedHackEnabled then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = speedValue
+        end
+    end
+    if noClipEnabled then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- ================================================================
+--  АИМБОТ ЛОГИКА
+-- ================================================================
+local function getTargetPart(character)
+    if targetPart == "Head" then
+        return character:FindFirstChild("Head")
+    elseif targetPart == "Torso" then
+        return character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+    else
+        return character:FindFirstChild("HumanoidRootPart")
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if not aimbotEnabled then return end
+
+    local localChar = LP.Character
+    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return end
+
+    local camera = workspace.CurrentCamera
+    local mousePos = UIS:GetMouseLocation()
+    local screenCenter = camera.ViewportSize / 2
+
+    local closestDist = circleRadius
+    local closestPlayer = nil
+    local closestPart = nil
+
+    if lockButtonEnabled and lockTarget and lockTarget.Parent and lockTarget.Parent:FindFirstChild("Humanoid") then
+        local part = getTargetPart(lockTarget.Parent)
+        if part and part:IsDescendantOf(workspace) then
+            closestPlayer = lockTarget.Parent
+            closestPart = part
+        else
+            lockTarget = nil
+        end
+    end
+
+    if not closestPlayer then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local char = player.Character
+                local humanoid = char:FindFirstChild("Humanoid")
+                if humanoid and humanoid.Health > 0 then
+                    local part = getTargetPart(char)
+                    if part then
+                        local pos, onScreen = camera:WorldToViewportPoint(part.Position)
+                        if onScreen then
+                            local dist = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
+                            if dist < closestDist then
+                                closestDist = dist
+                                closestPlayer = player
+                                closestPart = part
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if closestPlayer and closestPart then
+        local targetPos = closestPart.Position
+        local velocity = closestPart.Velocity or Vector3.new()
+        targetPos = targetPos + (velocity * prediction)
+
+        local screenPos, onScreen = camera:WorldToViewportPoint(targetPos)
+        if onScreen then
+            local smoothFactor = smoothness / 100
+            local targetScreen = Vector2.new(screenPos.X, screenPos.Y)
+            local currentMouse = UIS:GetMouseLocation()
+            local newMouse = currentMouse:Lerp(targetScreen, math.min(smoothFactor, 1))
+
+            if smoothFactor >= 0.99 then
+                mousemoverel(targetScreen.X - currentMouse.X, targetScreen.Y - currentMouse.Y)
+            else
+                mousemoverel(newMouse.X - currentMouse.X, newMouse.Y - currentMouse.Y)
+            end
+
+            if lockButtonEnabled then
+                lockTarget = closestPart
+            else
+                currentTarget = closestPlayer
+            end
+        end
+    end
+
+    if aimbotCircleEnabled then
+        local circle = Drawing.new("Circle")
+        circle.Radius = circleRadius
+        circle.Position = screenCenter
+        circle.Thickness = 2
+        circle.Color = Color3.fromRGB(220, 50, 100)
+        circle.Transparency = 1
+        circle.Visible = true
+        circle.Filled = false
+        circle.NumSides = 60
+        task.wait()
+        circle:Remove()
+    end
+end)
+
+-- ================================================================
+--  МОБИЛЬНЫЕ КНОПКИ
 -- ================================================================
 local mobileButton = nil
 local snowButtonObj = nil
@@ -1046,7 +1294,6 @@ if isMobile() then
     btnGui.ResetOnSpawn = false
     btnGui.Parent = CG
 
-    -- Кнопка открытия GUI
     mobileButton = Instance.new("ImageButton")
     mobileButton.Size = UDim2.new(0, 50, 0, 50)
     mobileButton.Position = UDim2.new(1, -60, 0.5, -25)
@@ -1089,7 +1336,6 @@ if isMobile() then
     mobileButton.MouseButton1Click:Connect(toggleGUI)
     mobileButton.TouchTap:Connect(toggleGUI)
 
-    -- SNOW BUTTON (красная передвигаемая кнопка для включения аимбота)
     local function createSnowButton()
         if snowButtonObj then snowButtonObj:Destroy() end
         snowButtonObj = Instance.new("ImageButton")
@@ -1137,7 +1383,6 @@ if isMobile() then
         end)
     end
 
-    -- LOCK BUTTON (заморозка цели)
     local function createLockButton()
         if lockButtonObj then lockButtonObj:Destroy() end
         lockButtonObj = Instance.new("ImageButton")
@@ -1191,7 +1436,6 @@ if isMobile() then
         end)
     end
 
-    -- Добавляем функции в GUI (в Combat или Misc)
     local mobileSection = mkSection(CL, "Mobile Controls", 2)
     local snowToggle, getSnow = mkToggle(mobileSection, "Snow Button", false, function(val)
         snowButtonEnabled = val
@@ -1215,113 +1459,6 @@ if isMobile() then
 end
 
 -- ================================================================
---  АИМБОТ ЛОГИКА (через RenderStepped)
--- ================================================================
-local function getTargetPart(character)
-    if targetPart == "Head" then
-        return character:FindFirstChild("Head")
-    elseif targetPart == "Torso" then
-        return character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
-    else
-        return character:FindFirstChild("HumanoidRootPart")
-    end
-end
-
-RunService.RenderStepped:Connect(function()
-    if not aimbotEnabled then return end
-
-    local localChar = LP.Character
-    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return end
-
-    local camera = workspace.CurrentCamera
-    local mousePos = UIS:GetMouseLocation()
-    local screenCenter = camera.ViewportSize / 2
-
-    local closestDist = circleRadius
-    local closestPlayer = nil
-    local closestPart = nil
-
-    -- Если есть залоченная цель
-    if lockButtonEnabled and lockTarget and lockTarget.Parent and lockTarget.Parent:FindFirstChild("Humanoid") then
-        local part = getTargetPart(lockTarget.Parent)
-        if part and part:IsDescendantOf(workspace) then
-            closestPlayer = lockTarget.Parent
-            closestPart = part
-        else
-            lockTarget = nil
-        end
-    end
-
-    -- Поиск цели
-    if not closestPlayer then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local char = player.Character
-                local humanoid = char:FindFirstChild("Humanoid")
-                if humanoid and humanoid.Health > 0 then
-                    local part = getTargetPart(char)
-                    if part then
-                        local pos, onScreen = camera:WorldToViewportPoint(part.Position)
-                        if onScreen then
-                            local dist = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
-                            if dist < closestDist then
-                                closestDist = dist
-                                closestPlayer = player
-                                closestPart = part
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    if closestPlayer and closestPart then
-        local targetPos = closestPart.Position
-
-        -- Prediction
-        local velocity = closestPart.Velocity or Vector3.new()
-        targetPos = targetPos + (velocity * prediction)
-
-        local screenPos, onScreen = camera:WorldToViewportPoint(targetPos)
-        if onScreen then
-            local smoothFactor = smoothness / 100
-            local targetScreen = Vector2.new(screenPos.X, screenPos.Y)
-            local currentMouse = UIS:GetMouseLocation()
-            local newMouse = currentMouse:Lerp(targetScreen, math.min(smoothFactor, 1))
-
-            if smoothFactor >= 0.99 then
-                mousemoverel(targetScreen.X - currentMouse.X, targetScreen.Y - currentMouse.Y)
-            else
-                mousemoverel(newMouse.X - currentMouse.X, newMouse.Y - currentMouse.Y)
-            end
-
-            if lockButtonEnabled then
-                lockTarget = closestPart
-            else
-                currentTarget = closestPlayer
-            end
-        end
-    end
-
-    -- Рисуем круг
-    if aimbotCircleEnabled then
-        -- Используем Drawing API для круга
-        local circle = Drawing.new("Circle")
-        circle.Radius = circleRadius
-        circle.Position = screenCenter
-        circle.Thickness = 2
-        circle.Color = Color3.fromRGB(220, 50, 100)
-        circle.Transparency = 1
-        circle.Visible = true
-        circle.Filled = false
-        circle.NumSides = 60
-        task.wait()
-        circle:Remove()
-    end
-end)
-
--- ================================================================
 --  HIDE / SHOW
 -- ================================================================
 local visible = true
@@ -1337,4 +1474,4 @@ UIS.InputBegan:Connect(function(i, gpe)
 end)
 
 setTab("Home")
-print("[SinyxWare] ✓ Insert = скрыть/показать | Мобильные кнопки активны")
+print("[SinyxWare] ✓ Insert = скрыть/показать | Все функции работают")
