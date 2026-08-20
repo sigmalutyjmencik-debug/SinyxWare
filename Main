@@ -1,68 +1,32 @@
 -- ================================================================
---  SINYXWARE v8.0 | PINK GRADIENT ULTRA BEAUTIFUL
---  Версия: 8.0 | Дата: 20.08.2026
+--  SINYXWARE GUI | Pink Gradient | v3
 -- ================================================================
 
+local Players = game:GetService("Players")
+local RS = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
 local CG = game:GetService("CoreGui")
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+
 local LP = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
-if not Drawing then error("Drawing не поддерживается") end
-
 -- ================================================================
---  ГРАДИЕНТНЫЕ ЦВЕТА (РОЗОВЫЙ)
--- ================================================================
-local Pink = {
-    light = Color3.fromRGB(255, 182, 193),
-    medium = Color3.fromRGB(255, 105, 180),
-    dark = Color3.fromRGB(199, 21, 133),
-    deep = Color3.fromRGB(148, 0, 211),
-    glow = Color3.fromRGB(255, 20, 147),
-    bg1 = Color3.fromRGB(20, 8, 15),
-    bg2 = Color3.fromRGB(35, 12, 25),
-    bg3 = Color3.fromRGB(50, 18, 35),
-    text = Color3.fromRGB(255, 230, 240),
-    textDim = Color3.fromRGB(200, 160, 180),
-    border = Color3.fromRGB(80, 30, 55),
-    toggleOff = Color3.fromRGB(60, 25, 45),
-    red = Color3.fromRGB(210, 30, 30),
-}
-
--- ================================================================
---  НАСТРОЙКИ
--- ================================================================
-local cfg = {
-    aimbot = false,
-    fovSize = 120,
-    aimKey = "Q",
-    showCircle = true,
-    smooth = 50,
-}
-
--- ================================================================
---  ОПРЕДЕЛЕНИЕ УСТРОЙСТВА
+--  ДЕТЕКТ УСТРОЙСТВА
 -- ================================================================
 local function isMobile()
     return UIS.TouchEnabled and not UIS.MouseEnabled
 end
 
-local function isTablet()
-    return UIS.TouchEnabled and UIS.MouseEnabled
-end
-
 -- ================================================================
---  ОПРЕДЕЛЕНИЕ ЭКЗЕКУТОРА
+--  ДЕТЕКТ ИНЖЕКТОРА
 -- ================================================================
 local function DetectExecutor()
-    local genv = getgenv and getgenv() or _G
     if identifyexecutor then
-        local name, version = identifyexecutor()
-        return tostring(name) .. (version and (" " .. tostring(version)) or "")
+        local n, v = identifyexecutor()
+        return tostring(n) .. (v and (" " .. tostring(v)) or "")
     end
+    local genv = getgenv and getgenv() or _G
     if genv.wave or genv.Wave then return "Wave"
     elseif genv.solara or genv.Solara then return "Solara"
     elseif genv.celery or genv.Celery then return "Celery"
@@ -73,16 +37,105 @@ local function DetectExecutor()
     elseif genv.S_EXECUTOR then return "Swift"
     end
     if checkclosure or isourclosure then return "Advanced Executor"
-    elseif getrawmetatable then return "Medium Tier Executor" end
-    return "Unknown / External"
+    elseif getrawmetatable then return "Medium Tier Executor"
+    end
+    return "Unknown"
 end
 
-local executor = DetectExecutor()
+local EXECUTOR = DetectExecutor()
+local DEVICE = isMobile() and "Mobile" or "PC"
+local PLACE = tostring(game.PlaceId)
 
 -- ================================================================
---  СОЗДАНИЕ GUI
+--  ЦВЕТА
+-- ================================================================
+local C = {
+    bg = Color3.fromRGB(14, 10, 18),
+    sidebar = Color3.fromRGB(20, 13, 26),
+    panel = Color3.fromRGB(26, 16, 33),
+    section = Color3.fromRGB(34, 20, 44),
+    pink1 = Color3.fromRGB(255, 100, 200),
+    pink2 = Color3.fromRGB(220, 60, 180),
+    pink3 = Color3.fromRGB(180, 40, 140),
+    pinkDark = Color3.fromRGB(100, 20, 80),
+    red = Color3.fromRGB(220, 40, 40),
+    redPink = Color3.fromRGB(230, 60, 100),
+    text = Color3.fromRGB(240, 220, 235),
+    dim = Color3.fromRGB(140, 110, 130),
+    white = Color3.fromRGB(255, 255, 255),
+    border = Color3.fromRGB(80, 35, 70),
+    togOff = Color3.fromRGB(55, 30, 55),
+    sliderBg = Color3.fromRGB(60, 20, 55),
+}
+
+-- ================================================================
+--  АИМБОТ СОСТОЯНИЕ
+-- ================================================================
+local AIM = {Enabled = false, FOV = 120}
+
+local function getTarget()
+    local best, bd = nil, AIM.FOV
+    local vp = Camera.ViewportSize
+    local center = Vector2.new(vp.X/2, vp.Y/2)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p == LP then continue end
+        local ch = p.Character
+        if not ch then continue end
+        local hum = ch:FindFirstChildOfClass("Humanoid")
+        if not hum or hum.Health <= 0 then continue end
+        local part = ch:FindFirstChild("Head")
+        if not part then continue end
+        local pos, vis = Camera:WorldToViewportPoint(part.Position)
+        if not vis then continue end
+        local d = (Vector2.new(pos.X, pos.Y) - center).Magnitude
+        if d < bd then
+            bd = d
+            best = part
+        end
+    end
+    return best
+end
+
+-- FOV кружок
+local FOVGui = Instance.new("ScreenGui")
+FOVGui.Name = "SW_FOV"
+FOVGui.IgnoreGuiInset = true
+FOVGui.ResetOnSpawn = false
+FOVGui.Parent = CG
+
+local FOVFrame = Instance.new("Frame", FOVGui)
+FOVFrame.BackgroundTransparency = 1
+FOVFrame.BorderSizePixel = 0
+FOVFrame.Visible = false
+Instance.new("UICorner", FOVFrame).CornerRadius = UDim.new(1, 0)
+
+local FOVStroke = Instance.new("UIStroke", FOVFrame)
+FOVStroke.Color = C.pink1
+FOVStroke.Thickness = 1.2
+
+RS.RenderStepped:Connect(function()
+    local vp = Camera.ViewportSize
+    local r = AIM.FOV
+    FOVFrame.Size = UDim2.new(0, r*2, 0, r*2)
+    FOVFrame.Position = UDim2.new(0, vp.X/2-r, 0, vp.Y/2-r)
+    FOVFrame.Visible = AIM.Enabled
+    if AIM.Enabled then
+        local t = getTarget()
+        if t then
+            local cf = Camera.CFrame
+            local dir = (t.Position - cf.Position).Unit
+            Camera.CFrame = CFrame.new(cf.Position, cf.Position + dir)
+        end
+    end
+end)
+
+-- ================================================================
+--  ROOT GUI
 -- ================================================================
 pcall(function() CG:FindFirstChild("SinyxWare"):Destroy() end)
+
+local W, H = 420, 290
+local SW_W = 100
 
 local Root = Instance.new("ScreenGui")
 Root.Name = "SinyxWare"
@@ -93,619 +146,743 @@ Root.Parent = CG
 
 -- Внешняя рамка с градиентом
 local Outer = Instance.new("Frame", Root)
-Outer.Size = UDim2.new(0, 500, 0, 380)
-Outer.Position = UDim2.new(0.5, -250, 0.5, -190)
-Outer.BackgroundColor3 = Pink.deep
+Outer.Size = UDim2.new(0, W, 0, H)
+Outer.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
+Outer.BackgroundColor3 = C.pink1
 Outer.BorderSizePixel = 0
-Outer.Active = true
-Instance.new("UICorner", Outer).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", Outer).CornerRadius = UDim.new(0, 6)
 
--- Внутренний фон с градиентом
+local OuterGrad = Instance.new("UIGradient", Outer)
+OuterGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 210)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 50, 160)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 30, 100)),
+})
+OuterGrad.Rotation = 135
+
+-- Главный фрейм
 local Main = Instance.new("Frame", Outer)
 Main.Size = UDim2.new(1, -4, 1, -4)
 Main.Position = UDim2.new(0, 2, 0, 2)
-Main.BackgroundColor3 = Pink.bg1
+Main.BackgroundColor3 = C.bg
 Main.BorderSizePixel = 0
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+Main.ClipsDescendants = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 5)
 
--- Градиентный фон (накладываем поверх)
-local GradientBg = Instance.new("Frame", Main)
-GradientBg.Size = UDim2.new(1, 0, 1, 0)
-GradientBg.BackgroundTransparency = 0.7
-GradientBg.BorderSizePixel = 0
-Instance.new("UICorner", GradientBg).CornerRadius = UDim.new(0, 10)
-
-local UIGradient = Instance.new("UIGradient", GradientBg)
-UIGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Pink.bg2),
-    ColorSequenceKeypoint.new(0.5, Pink.bg1),
-    ColorSequenceKeypoint.new(1, Pink.bg3),
-}
-UIGradient.Rotation = 45
+-- Фоновый градиент основного окна
+local BgGrad = Instance.new("UIGradient", Main)
+BgGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 10, 24)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(22, 12, 30)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 14, 36)),
+})
+BgGrad.Rotation = 45
 
 -- ================================================================
---  DRAG (для ПК и мобилы)
+--  DRAG
 -- ================================================================
-local drag = {active = false, start = nil, offset = nil}
+local drag, ds, op = false, nil, nil
 Main.InputBegan:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        drag.active = true
-        drag.start = i.Position
-        drag.offset = Outer.Position
+        drag = true
+        ds = i.Position
+        op = Outer.Position
     end
 end)
+
 Main.InputEnded:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        drag.active = false
+        drag = false
     end
 end)
+
 UIS.InputChanged:Connect(function(i)
-    if drag.active and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-        local delta = i.Position - drag.start
-        Outer.Position = UDim2.new(
-            drag.offset.X.Scale, drag.offset.X.Offset + delta.X,
-            drag.offset.Y.Scale, drag.offset.Y.Offset + delta.Y
-        )
+    if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local d = i.Position - ds
+        Outer.Position = UDim2.new(op.X.Scale, op.X.Offset + d.X, op.Y.Scale, op.Y.Offset + d.Y)
     end
 end)
+
+-- ================================================================
+--  САЙДБАР
+-- ================================================================
+local Sidebar = Instance.new("Frame", Main)
+Sidebar.Size = UDim2.new(0, SW_W, 1, 0)
+Sidebar.BackgroundColor3 = C.sidebar
+Sidebar.BorderSizePixel = 0
+
+local SbGrad = Instance.new("UIGradient", Sidebar)
+SbGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 15, 38)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 10, 26)),
+})
+SbGrad.Rotation = 180
+
+local SDiv = Instance.new("Frame", Main)
+SDiv.Size = UDim2.new(0, 1, 1, 0)
+SDiv.Position = UDim2.new(0, SW_W, 0, 0)
+SDiv.BackgroundColor3 = C.border
+SDiv.BorderSizePixel = 0
+
+local LogoF = Instance.new("Frame", Sidebar)
+LogoF.Size = UDim2.new(1, 0, 0, 38)
+LogoF.BackgroundTransparency = 1
+
+local LogoSinyx = Instance.new("TextLabel", LogoF)
+LogoSinyx.Size = UDim2.new(1, 0, 0, 20)
+LogoSinyx.Position = UDim2.new(0, 0, 0, 6)
+LogoSinyx.BackgroundTransparency = 1
+LogoSinyx.Text = "Sinyx"
+LogoSinyx.Font = Enum.Font.GothamBold
+LogoSinyx.TextSize = 13
+LogoSinyx.TextColor3 = C.pink1
+LogoSinyx.TextXAlignment = Enum.TextXAlignment.Center
+
+local SinyxGrad = Instance.new("UIGradient", LogoSinyx)
+SinyxGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 230)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(220, 80, 190)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 50, 160)),
+})
+SinyxGrad.Rotation = 0
+
+local LogoWare = Instance.new("TextLabel", LogoF)
+LogoWare.Size = UDim2.new(1, 0, 0, 14)
+LogoWare.Position = UDim2.new(0, 0, 0, 22)
+LogoWare.BackgroundTransparency = 1
+LogoWare.Text = "Ware"
+LogoWare.Font = Enum.Font.GothamBold
+LogoWare.TextSize = 9
+LogoWare.TextColor3 = C.red
+LogoWare.TextXAlignment = Enum.TextXAlignment.Center
+
+local WareGrad = Instance.new("UIGradient", LogoWare)
+WareGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(240, 50, 50)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(220, 40, 80)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 60, 100)),
+})
+WareGrad.Rotation = 0
+
+local LDiv = Instance.new("Frame", Sidebar)
+LDiv.Size = UDim2.new(0.8, 0, 0, 1)
+LDiv.Position = UDim2.new(0.1, 0, 0, 38)
+LDiv.BackgroundColor3 = C.border
+LDiv.BorderSizePixel = 0
 
 -- ================================================================
 --  ТАБЫ
 -- ================================================================
 local TABS = {
-    {name = "Home", icon = "🏠"},
-    {name = "Combat", icon = "⚔"},
-    {name = "Visuals", icon = "👁"},
-    {name = "Misc", icon = "⚙"},
+    {n = "Home", ico = "⌂"},
+    {n = "Combat", ico = "⚔"},
+    {n = "Visuals", ico = "◎"},
+    {n = "Misc", ico = "⚙"},
+    {n = "Config", ico = "≡"},
 }
 
 local TabBtns = {}
-local TabFrames = {}
-local activeTab = "Home"
+local TabContent = {}
+local curTab = "Home"
 
--- Контейнер для табов
-local TabContainer = Instance.new("Frame", Main)
-TabContainer.Size = UDim2.new(1, 0, 0, 40)
-TabContainer.Position = UDim2.new(0, 0, 0, 0)
-TabContainer.BackgroundColor3 = Pink.bg2
-TabContainer.BackgroundTransparency = 0.5
-TabContainer.BorderSizePixel = 0
-Instance.new("UICorner", TabContainer).CornerRadius = UDim.new(0, 10)
+local NavF = Instance.new("Frame", Sidebar)
+NavF.Size = UDim2.new(1, 0, 1, -44)
+NavF.Position = UDim2.new(0, 0, 0, 44)
+NavF.BackgroundTransparency = 1
 
-local TabLayout = Instance.new("UIListLayout", TabContainer)
-TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.Padding = UDim.new(0, 0)
-TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local NavL = Instance.new("UIListLayout", NavF)
+NavL.Padding = UDim.new(0, 2)
+NavL.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function setTab(name)
+    curTab = name
+    for n, t in pairs(TabBtns) do
+        local on = n == name
+        t.bar.BackgroundTransparency = on and 0 or 1
+        t.ico.TextColor3 = on and C.pink1 or C.dim
+        t.lbl.TextColor3 = on and C.white or C.dim
+        if on then
+            TS:Create(t.bg, TweenInfo.new(0.15), {
+                BackgroundTransparency = 0.85
+            }):Play()
+        else
+            TS:Create(t.bg, TweenInfo.new(0.15), {
+                BackgroundTransparency = 1
+            }):Play()
+        end
+    end
+    for n, f in pairs(TabContent) do
+        f.Visible = n == name
+    end
+end
 
 for i, tab in ipairs(TABS) do
-    local btn = Instance.new("TextButton", TabContainer)
-    btn.Size = UDim2.new(0.25, 0, 1, 0)
+    local btn = Instance.new("TextButton", NavF)
+    btn.Size = UDim2.new(1, 0, 0, 30)
     btn.BackgroundTransparency = 1
-    btn.BorderSizePixel = 0
-    btn.Text = tab.icon .. " " .. tab.name
-    btn.TextColor3 = i == 1 and Pink.medium or Pink.textDim
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
+    btn.Text = ""
     btn.AutoButtonColor = false
-    btn.ZIndex = 2
-    
-    local underline = Instance.new("Frame", btn)
-    underline.Size = UDim2.new(0.6, 0, 0, 2)
-    underline.Position = UDim2.new(0.2, 0, 1, -2)
-    underline.BackgroundColor3 = Pink.medium
-    underline.BorderSizePixel = 0
-    underline.BackgroundTransparency = i == 1 and 0 or 1
-    Instance.new("UICorner", underline).CornerRadius = UDim.new(1, 0)
-    
-    TabBtns[tab.name] = {btn = btn, underline = underline}
-    
-    btn.MouseButton1Click:Connect(function()
-        for n, t in pairs(TabBtns) do
-            t.underline.BackgroundTransparency = 1
-            t.btn.TextColor3 = Pink.textDim
-        end
-        underline.BackgroundTransparency = 0
-        btn.TextColor3 = Pink.medium
-        activeTab = tab.name
-        for n, f in pairs(TabFrames) do
-            f.Visible = n == tab.name
-        end
-    end)
-    btn.TouchTap:Connect(function()
-        for n, t in pairs(TabBtns) do
-            t.underline.BackgroundTransparency = 1
-            t.btn.TextColor3 = Pink.textDim
-        end
-        underline.BackgroundTransparency = 0
-        btn.TextColor3 = Pink.medium
-        activeTab = tab.name
-        for n, f in pairs(TabFrames) do
-            f.Visible = n == tab.name
-        end
-    end)
-end
+    btn.LayoutOrder = i
 
--- Контентная область
-local ContentArea = Instance.new("Frame", Main)
-ContentArea.Size = UDim2.new(1, 0, 1, -40)
-ContentArea.Position = UDim2.new(0, 0, 0, 40)
-ContentArea.BackgroundTransparency = 1
-ContentArea.ClipsDescendants = true
+    local bg = Instance.new("Frame", btn)
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = C.pink3
+    bg.BackgroundTransparency = 1
+    bg.BorderSizePixel = 0
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 4)
 
--- ================================================================
---  ВКЛАДКА HOME
--- ================================================================
-local HomeFrame = Instance.new("ScrollingFrame", ContentArea)
-HomeFrame.Size = UDim2.new(1, 0, 1, 0)
-HomeFrame.BackgroundTransparency = 1
-HomeFrame.BorderSizePixel = 0
-HomeFrame.ScrollBarThickness = 3
-HomeFrame.ScrollBarImageColor3 = Pink.medium
-HomeFrame.CanvasSize = UDim2.new(0, 0, 0, 500)
-HomeFrame.Visible = true
-TabFrames["Home"] = HomeFrame
+    local bar = Instance.new("Frame", btn)
+    bar.Size = UDim2.new(0, 2, 0.6, 0)
+    bar.Position = UDim2.new(0, 0, 0.2, 0)
+    bar.BackgroundColor3 = C.pink1
+    bar.BorderSizePixel = 0
+    bar.BackgroundTransparency = tab.n == "Home" and 0 or 1
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 1)
 
--- Картинка сверху
-local Image = Instance.new("ImageLabel", HomeFrame)
-Image.Size = UDim2.new(0.6, 0, 0, 120)
-Image.Position = UDim2.new(0.2, 0, 0, 10)
-Image.Image = "rbxassetid://121540865505620"
-Image.BackgroundTransparency = 1
-Image.ScaleType = Enum.ScaleType.Fit
+    local barGrad = Instance.new("UIGradient", bar)
+    barGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 230)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 40, 140)),
+    })
+    barGrad.Rotation = 90
 
--- Информационная панель
-local InfoPanel = Instance.new("Frame", HomeFrame)
-InfoPanel.Size = UDim2.new(0.8, 0, 0, 120)
-InfoPanel.Position = UDim2.new(0.1, 0, 0, 140)
-InfoPanel.BackgroundColor3 = Pink.bg3
-InfoPanel.BackgroundTransparency = 0.4
-InfoPanel.BorderSizePixel = 0
-Instance.new("UICorner", InfoPanel).CornerRadius = UDim.new(0, 8)
+    local ico = Instance.new("TextLabel", btn)
+    ico.Size = UDim2.new(0, 22, 1, 0)
+    ico.Position = UDim2.new(0, 8, 0, 0)
+    ico.BackgroundTransparency = 1
+    ico.Text = tab.ico
+    ico.Font = Enum.Font.GothamBold
+    ico.TextSize = 11
+    ico.TextColor3 = tab.n == "Home" and C.pink1 or C.dim
 
-local InfoLayout = Instance.new("UIListLayout", InfoPanel)
-InfoLayout.Padding = UDim.new(0, 5)
-InfoLayout.SortOrder = Enum.SortOrder.LayoutOrder
-InfoLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-local function addInfoLine(text)
-    local lbl = Instance.new("TextLabel", InfoPanel)
-    lbl.Size = UDim2.new(1, -10, 0, 25)
+    local lbl = Instance.new("TextLabel", btn)
+    lbl.Size = UDim2.new(1, -32, 1, 0)
+    lbl.Position = UDim2.new(0, 32, 0, 0)
     lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = Pink.text
+    lbl.Text = tab.n
     lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 13
+    lbl.TextSize = 9
+    lbl.TextColor3 = tab.n == "Home" and C.white or C.dim
     lbl.TextXAlignment = Enum.TextXAlignment.Left
-    return lbl
+
+    TabBtns[tab.n] = {bar = bar, ico = ico, lbl = lbl, bg = bg}
+
+    btn.MouseButton1Click:Connect(function() setTab(tab.n) end)
+    btn.TouchTap:Connect(function() setTab(tab.n) end)
 end
 
-addInfoLine("Executor: " .. executor)
-addInfoLine("Device: " .. (isMobile() and "Mobile" or isTablet() and "Tablet" or "PC"))
-addInfoLine("Place: " .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
-addInfoLine("Version: v8.0 | Pink Gradient")
+-- ================================================================
+--  КОНТЕНТ ОБЛАСТЬ
+-- ================================================================
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1, -SW_W - 1, 1, -28)
+Content.Position = UDim2.new(0, SW_W + 1, 0, 0)
+Content.BackgroundTransparency = 1
+Content.ClipsDescendants = true
+
+local BotBar = Instance.new("Frame", Main)
+BotBar.Size = UDim2.new(1, -SW_W, 0, 14)
+BotBar.Position = UDim2.new(0, SW_W, 1, -14)
+BotBar.BackgroundColor3 = C.sidebar
+BotBar.BorderSizePixel = 0
+
+local BotDiv = Instance.new("Frame", Main)
+BotDiv.Size = UDim2.new(1, -SW_W, 0, 1)
+BotDiv.Position = UDim2.new(0, SW_W, 1, -15)
+BotDiv.BackgroundColor3 = C.border
+BotDiv.BorderSizePixel = 0
+
+local BotLbl = Instance.new("TextLabel", BotBar)
+BotLbl.Size = UDim2.new(1, 0, 1, 0)
+BotLbl.BackgroundTransparency = 1
+BotLbl.Text = "SinyxWare"
+BotLbl.TextColor3 = C.dim
+BotLbl.Font = Enum.Font.Gotham
+BotLbl.TextSize = 7
+BotLbl.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ================================================================
---  ВКЛАДКА COMBAT (Аимбот)
+--  ХЕЛПЕРЫ UI
 -- ================================================================
-local CombatFrame = Instance.new("ScrollingFrame", ContentArea)
-CombatFrame.Size = UDim2.new(1, 0, 1, 0)
-CombatFrame.BackgroundTransparency = 1
-CombatFrame.BorderSizePixel = 0
-CombatFrame.ScrollBarThickness = 3
-CombatFrame.ScrollBarImageColor3 = Pink.medium
-CombatFrame.CanvasSize = UDim2.new(0, 0, 0, 300)
-CombatFrame.Visible = false
-TabFrames["Combat"] = CombatFrame
-
--- Секция Aimbot
-local AimSection = Instance.new("Frame", CombatFrame)
-AimSection.Size = UDim2.new(0.9, 0, 0, 80)
-AimSection.Position = UDim2.new(0.05, 0, 0, 10)
-AimSection.BackgroundColor3 = Pink.bg3
-AimSection.BackgroundTransparency = 0.3
-AimSection.BorderSizePixel = 0
-Instance.new("UICorner", AimSection).CornerRadius = UDim.new(0, 8)
-
--- Заголовок секции
-local AimTitle = Instance.new("TextLabel", AimSection)
-AimTitle.Size = UDim2.new(1, 0, 0, 25)
-AimTitle.Position = UDim2.new(0, 10, 0, 0)
-AimTitle.BackgroundTransparency = 1
-AimTitle.Text = "🎯 Aimbot"
-AimTitle.TextColor3 = Pink.medium
-AimTitle.Font = Enum.Font.GothamBold
-AimTitle.TextSize = 16
-AimTitle.TextXAlignment = Enum.TextXAlignment.Left
-
--- Строка с тогглом и клавишей
-local AimRow = Instance.new("Frame", AimSection)
-AimRow.Size = UDim2.new(1, 0, 0, 30)
-AimRow.Position = UDim2.new(0, 0, 0, 30)
-AimRow.BackgroundTransparency = 1
-
-local AimLabel = Instance.new("TextLabel", AimRow)
-AimLabel.Size = UDim2.new(0.3, 0, 1, 0)
-AimLabel.Position = UDim2.new(0, 10, 0, 0)
-AimLabel.BackgroundTransparency = 1
-AimLabel.Text = "Aimbot"
-AimLabel.TextColor3 = Pink.text
-AimLabel.Font = Enum.Font.Gotham
-AimLabel.TextSize = 13
-AimLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Клавиша (слева от тоггла)
-local KeyBtn = Instance.new("TextButton", AimRow)
-KeyBtn.Size = UDim2.new(0, 30, 0, 22)
-KeyBtn.Position = UDim2.new(0.4, 0, 0.5, -11)
-KeyBtn.BackgroundColor3 = Pink.bg3
-KeyBtn.Text = cfg.aimKey
-KeyBtn.TextColor3 = Pink.text
-KeyBtn.Font = Enum.Font.GothamBold
-KeyBtn.TextSize = 12
-KeyBtn.BorderSizePixel = 0
-Instance.new("UICorner", KeyBtn).CornerRadius = UDim.new(0, 4)
-
--- Тоггл (ползунок)
-local TogBg = Instance.new("TextButton", AimRow)
-TogBg.Size = UDim2.new(0, 40, 0, 20)
-TogBg.Position = UDim2.new(0.7, 0, 0.5, -10)
-TogBg.BackgroundColor3 = cfg.aimbot and Pink.medium or Pink.toggleOff
-TogBg.BorderSizePixel = 0
-TogBg.Text = ""
-TogBg.AutoButtonColor = false
-Instance.new("UICorner", TogBg).CornerRadius = UDim.new(1, 0)
-
-local Knob = Instance.new("Frame", TogBg)
-Knob.Size = UDim2.new(0, 16, 0, 16)
-Knob.Position = cfg.aimbot and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-Knob.BackgroundColor3 = Pink.text
-Knob.BorderSizePixel = 0
-Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
-
--- Функция тоггла
-local function toggleAim()
-    cfg.aimbot = not cfg.aimbot
-    TS:Create(TogBg, TweenInfo.new(0.2), {
-        BackgroundColor3 = cfg.aimbot and Pink.medium or Pink.toggleOff
-    }):Play()
-    TS:Create(Knob, TweenInfo.new(0.2), {
-        Position = cfg.aimbot and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-    }):Play()
+local function corner(f, r)
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 3)
 end
 
-TogBg.MouseButton1Click:Connect(toggleAim)
-TogBg.TouchTap:Connect(toggleAim)
-
--- Назначение клавиши
-local keyAwait = false
-KeyBtn.MouseButton1Click:Connect(function()
-    keyAwait = true
-    KeyBtn.Text = "..."
-end)
-KeyBtn.TouchTap:Connect(function()
-    keyAwait = true
-    KeyBtn.Text = "..."
-end)
-
-UIS.InputBegan:Connect(function(i, gpe)
-    if gpe then return end
-    if keyAwait and i.KeyCode ~= Enum.KeyCode.Unknown then
-        cfg.aimKey = tostring(i.KeyCode):gsub("Enum.KeyCode.", "")
-        KeyBtn.Text = cfg.aimKey
-        keyAwait = false
-    end
-end)
-
--- FOV Size слайдер
-local FovSection = Instance.new("Frame", CombatFrame)
-FovSection.Size = UDim2.new(0.9, 0, 0, 70)
-FovSection.Position = UDim2.new(0.05, 0, 0, 100)
-FovSection.BackgroundColor3 = Pink.bg3
-FovSection.BackgroundTransparency = 0.3
-FovSection.BorderSizePixel = 0
-Instance.new("UICorner", FovSection).CornerRadius = UDim.new(0, 8)
-
-local FovTitle = Instance.new("TextLabel", FovSection)
-FovTitle.Size = UDim2.new(1, 0, 0, 25)
-FovTitle.Position = UDim2.new(0, 10, 0, 0)
-FovTitle.BackgroundTransparency = 1
-FovTitle.Text = "📏 Fov Size"
-FovTitle.TextColor3 = Pink.medium
-FovTitle.Font = Enum.Font.GothamBold
-FovTitle.TextSize = 14
-FovTitle.TextXAlignment = Enum.TextXAlignment.Left
-
--- Трек слайдера
-local Track = Instance.new("TextButton", FovSection)
-Track.Size = UDim2.new(0.85, 0, 0, 20)
-Track.Position = UDim2.new(0.075, 0, 0, 30)
-Track.BackgroundColor3 = Pink.bg3
-Track.BorderSizePixel = 0
-Track.Text = ""
-Track.AutoButtonColor = false
-Instance.new("UICorner", Track).CornerRadius = UDim.new(0, 10)
-
-local Fill = Instance.new("Frame", Track)
-Fill.Size = UDim2.new(cfg.fovSize / 500, 0, 1, 0)
-Fill.BackgroundColor3 = Pink.medium
-Fill.BorderSizePixel = 0
-Instance.new("UICorner", Fill).CornerRadius = UDim.new(0, 10)
-
-local ValLbl = Instance.new("TextLabel", Track)
-ValLbl.Size = UDim2.new(1, 0, 1, 0)
-ValLbl.BackgroundTransparency = 1
-ValLbl.Text = tostring(cfg.fovSize)
-ValLbl.TextColor3 = Pink.text
-ValLbl.Font = Enum.Font.GothamBold
-ValLbl.TextSize = 12
-
-local function updateFov(ax)
-    local relX = math.clamp(ax - Track.AbsolutePosition.X, 0, Track.AbsoluteSize.X)
-    local pct = relX / Track.AbsoluteSize.X
-    local val = math.floor(10 + 490 * pct)
-    val = math.clamp(val, 10, 500)
-    cfg.fovSize = val
-    Fill.Size = UDim2.new(val / 500, 0, 1, 0)
-    ValLbl.Text = tostring(val)
+local function mkScroll(parent)
+    local f = Instance.new("ScrollingFrame", parent)
+    f.Size = UDim2.new(1, 0, 1, 0)
+    f.BackgroundTransparency = 1
+    f.BorderSizePixel = 0
+    f.ScrollBarThickness = 2
+    f.ScrollBarImageColor3 = C.pink2
+    f.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    f.CanvasSize = UDim2.new()
+    local l = Instance.new("UIListLayout", f)
+    l.Padding = UDim.new(0, 6)
+    l.SortOrder = Enum.SortOrder.LayoutOrder
+    local p = Instance.new("UIPadding", f)
+    p.PaddingTop = UDim.new(0, 8)
+    p.PaddingLeft = UDim.new(0, 6)
+    p.PaddingRight = UDim.new(0, 6)
+    return f
 end
 
-local sliding = false
-Track.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        sliding = true
-        updateFov(i.Position.X)
-    end
-end)
-UIS.InputChanged:Connect(function(i)
-    if sliding and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-        updateFov(i.Position.X)
-    end
-end)
-UIS.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        sliding = false
-    end
-end)
+local function mkSection(parent, title, lo)
+    local wrap = Instance.new("Frame", parent)
+    wrap.Size = UDim2.new(1, 0, 0, 0)
+    wrap.AutomaticSize = Enum.AutomaticSize.Y
+    wrap.BackgroundTransparency = 1
+    wrap.LayoutOrder = lo or 1
 
--- ================================================================
---  ВКЛАДКИ VISUALS И MISC (заглушки)
--- ================================================================
-local VisFrame = Instance.new("ScrollingFrame", ContentArea)
-VisFrame.Size = UDim2.new(1, 0, 1, 0)
-VisFrame.BackgroundTransparency = 1
-VisFrame.BorderSizePixel = 0
-VisFrame.Visible = false
-TabFrames["Visuals"] = VisFrame
+    local hdr = Instance.new("Frame", wrap)
+    hdr.Size = UDim2.new(1, 0, 0, 20)
+    hdr.BackgroundColor3 = C.section
+    hdr.BorderSizePixel = 0
+    corner(hdr, 4)
 
-local MiscFrame = Instance.new("ScrollingFrame", ContentArea)
-MiscFrame.Size = UDim2.new(1, 0, 1, 0)
-MiscFrame.BackgroundTransparency = 1
-MiscFrame.BorderSizePixel = 0
-MiscFrame.Visible = false
-TabFrames["Misc"] = MiscFrame
+    local hGrad = Instance.new("UIGradient", hdr)
+    hGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 22, 65)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(34, 16, 46)),
+    })
+    hGrad.Rotation = 0
 
--- Простые заглушки
-local function makePlaceholder(parent, text)
-    local lbl = Instance.new("TextLabel", parent)
-    lbl.Size = UDim2.new(1, 0, 1, 0)
+    local htxt = Instance.new("TextLabel", hdr)
+    htxt.Size = UDim2.new(1, -20, 1, 0)
+    htxt.Position = UDim2.new(0, 8, 0, 0)
+    htxt.BackgroundTransparency = 1
+    htxt.Text = title
+    htxt.TextColor3 = C.pink1
+    htxt.Font = Enum.Font.GothamBold
+    htxt.TextSize = 8
+    htxt.TextXAlignment = Enum.TextXAlignment.Left
+
+    local htGrad = Instance.new("UIGradient", htxt)
+    htGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 230)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 60, 150)),
+    })
+
+    local chev = Instance.new("TextButton", hdr)
+    chev.Size = UDim2.new(0, 16, 1, 0)
+    chev.Position = UDim2.new(1, -18, 0, 0)
+    chev.BackgroundTransparency = 1
+    chev.Text = "∨"
+    chev.TextColor3 = C.dim
+    chev.Font = Enum.Font.GothamBold
+    chev.TextSize = 9
+    chev.AutoButtonColor = false
+
+    local body = Instance.new("Frame", wrap)
+    body.Size = UDim2.new(1, 0, 0, 0)
+    body.AutomaticSize = Enum.AutomaticSize.Y
+    body.Position = UDim2.new(0, 0, 0, 22)
+    body.BackgroundColor3 = C.panel
+    body.BorderSizePixel = 0
+    corner(body, 4)
+
+    local bGrad = Instance.new("UIGradient", body)
+    bGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(32, 18, 42)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(24, 13, 32)),
+    })
+    bGrad.Rotation = 90
+
+    local bl = Instance.new("UIListLayout", body)
+    bl.Padding = UDim.new(0, 1)
+    bl.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local bp = Instance.new("UIPadding", body)
+    bp.PaddingTop = UDim.new(0, 4)
+    bp.PaddingBottom = UDim.new(0, 4)
+
+    local col = false
+    chev.MouseButton1Click:Connect(function()
+        col = not col
+        body.Visible = not col
+        chev.Text = col and ">" or "∨"
+    end)
+
+    return body
+end
+
+local function mkToggle(parent, label, default, cb)
+    local row = Instance.new("Frame", parent)
+    row.Size = UDim2.new(1, 0, 0, 20)
+    row.BackgroundTransparency = 1
+
+    local lbl = Instance.new("TextLabel", row)
+    lbl.Size = UDim2.new(1, -34, 1, 0)
+    lbl.Position = UDim2.new(0, 8, 0, 0)
     lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = Pink.textDim
+    lbl.Text = label
+    lbl.TextColor3 = C.text
     lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 20
+    lbl.TextSize = 8
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local pill = Instance.new("TextButton", row)
+    pill.Size = UDim2.new(0, 28, 0, 14)
+    pill.Position = UDim2.new(1, -32, 0.5, -7)
+    pill.BackgroundColor3 = default and C.pink2 or C.togOff
+    pill.BorderSizePixel = 0
+    pill.Text = ""
+    pill.AutoButtonColor = false
+    corner(pill, 7)
+
+    if default then
+        local pg = Instance.new("UIGradient", pill)
+        pg.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 210)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 40, 140)),
+        })
+    end
+
+    local knob = Instance.new("Frame", pill)
+    knob.Size = UDim2.new(0, 10, 0, 10)
+    knob.Position = default and UDim2.new(1, -12, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)
+    knob.BackgroundColor3 = C.white
+    knob.BorderSizePixel = 0
+    corner(knob, 5)
+
+    local val = default
+    local function toggle()
+        val = not val
+        TS:Create(pill, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = val and C.pink2 or C.togOff
+        }):Play()
+        TS:Create(knob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+            Position = val and UDim2.new(1, -12, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)
+        }):Play()
+        if cb then cb(val) end
+    end
+
+    pill.MouseButton1Click:Connect(toggle)
+    pill.TouchTap:Connect(toggle)
+    return row
 end
-makePlaceholder(VisFrame, "👁 Visuals Settings Coming Soon")
-makePlaceholder(MiscFrame, "⚙ Misc Settings Coming Soon")
+
+local function mkSlider(parent, label, mn, mx, def, cb)
+    local wrap = Instance.new("Frame", parent)
+    wrap.Size = UDim2.new(1, 0, 0, 32)
+    wrap.BackgroundTransparency = 1
+
+    local lbl = Instance.new("TextLabel", wrap)
+    lbl.Size = UDim2.new(1, -8, 0, 13)
+    lbl.Position = UDim2.new(0, 8, 0, 2)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 8
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local track = Instance.new("TextButton", wrap)
+    track.Size = UDim2.new(1, -16, 0, 14)
+    track.Position = UDim2.new(0, 8, 0, 17)
+    track.BackgroundColor3 = C.sliderBg
+    track.BorderSizePixel = 0
+    track.Text = ""
+    track.AutoButtonColor = false
+    corner(track, 3)
+
+    local fill = Instance.new("Frame", track)
+    fill.Size = UDim2.new((def - mn) / (mx - mn), 0, 1, 0)
+    fill.BackgroundColor3 = C.pink2
+    fill.BorderSizePixel = 0
+    corner(fill, 3)
+
+    local fGrad = Instance.new("UIGradient", fill)
+    fGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 140, 220)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(170, 40, 130)),
+    })
+
+    local valLbl = Instance.new("TextLabel", track)
+    valLbl.Size = UDim2.new(1, 0, 1, 0)
+    valLbl.BackgroundTransparency = 1
+    valLbl.Text = ("%g/%g"):format(def, mx)
+    valLbl.TextColor3 = C.white
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.TextSize = 7
+    valLbl.ZIndex = 3
+
+    local knob = Instance.new("Frame", fill)
+    knob.Size = UDim2.new(0, 8, 0, 8)
+    knob.AnchorPoint = Vector2.new(0.5, 0.5)
+    knob.Position = UDim2.new(1, 0, 0.5, 0)
+    knob.BackgroundColor3 = C.white
+    knob.BorderSizePixel = 0
+    corner(knob, 4)
+
+    local val = def
+    local sliding = false
+
+    local function upd(ax)
+        local rx = math.clamp(ax - track.AbsolutePosition.X, 0, track.AbsoluteSize.X)
+        local pct = rx / track.AbsoluteSize.X
+        val = math.floor(mn + (mx - mn) * pct + 0.5)
+        fill.Size = UDim2.new(pct, 0, 1, 0)
+        valLbl.Text = ("%g/%g"):format(val, mx)
+        if cb then cb(val) end
+    end
+
+    track.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            sliding = true
+            upd(i.Position.X)
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(i)
+        if sliding and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            upd(i.Position.X)
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            sliding = false
+        end
+    end)
+
+    return wrap
+end
 
 -- ================================================================
---  ESP И АИМБОТ
+--  HOME TAB
 -- ================================================================
-local espData = {}
-local rainbow = 0
+local homeF = Instance.new("Frame", Content)
+homeF.Size = UDim2.new(1, 0, 1, 0)
+homeF.BackgroundTransparency = 1
+homeF.Visible = true
+TabContent["Home"] = homeF
 
--- FOV круг
-local circle = Drawing.new("Circle")
-circle.Thickness = 2
-circle.NumSides = 64
-circle.Filled = false
-circle.Color = Pink.medium
-circle.Radius = cfg.fovSize
-circle.Visible = cfg.showCircle
-circle.Transparency = 0.4
-circle.ZIndex = 999
+local homeScroll = mkScroll(homeF)
 
-local function createESP(plr)
-    if plr == LP or espData[plr] then return end
-    local e = {
-        Box = Drawing.new("Square"),
-        Name = Drawing.new("Text"),
-    }
-    e.Box.Filled = false
-    e.Box.Thickness = 1.5
-    e.Box.Visible = false
-    e.Name.Size = 12
-    e.Name.Center = true
-    e.Name.Outline = true
-    e.Name.OutlineColor = Color3.fromRGB(0,0,0)
-    e.Name.Font = 3
-    e.Name.Visible = false
-    espData[plr] = e
+local bannerF = Instance.new("Frame", homeScroll)
+bannerF.Size = UDim2.new(1, 0, 0, 80)
+bannerF.BackgroundColor3 = C.section
+bannerF.BorderSizePixel = 0
+bannerF.LayoutOrder = 1
+corner(bannerF, 6)
+
+local bannerGrad = Instance.new("UIGradient", bannerF)
+bannerGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 20, 100)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(140, 40, 120)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 15, 80)),
+})
+bannerGrad.Rotation = 135
+
+local bannerImg = Instance.new("ImageLabel", bannerF)
+bannerImg.Size = UDim2.new(1, 0, 1, 0)
+bannerImg.BackgroundTransparency = 1
+bannerImg.Image = "rbxassetid://121540865505620"
+bannerImg.ScaleType = Enum.ScaleType.Crop
+bannerImg.ImageTransparency = 0
+corner(bannerImg, 6)
+
+local infoF = Instance.new("Frame", homeScroll)
+infoF.Size = UDim2.new(1, 0, 0, 0)
+infoF.AutomaticSize = Enum.AutomaticSize.Y
+infoF.BackgroundColor3 = C.panel
+infoF.BorderSizePixel = 0
+infoF.LayoutOrder = 2
+corner(infoF, 6)
+
+local infoGrad = Instance.new("UIGradient", infoF)
+infoGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(36, 18, 48)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(24, 12, 32)),
+})
+infoGrad.Rotation = 90
+
+local infoLayout = Instance.new("UIListLayout", infoF)
+infoLayout.Padding = UDim.new(0, 4)
+infoLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local infoPad = Instance.new("UIPadding", infoF)
+infoPad.PaddingAll = UDim.new(0, 8)
+
+local function mkInfoRow(parent, key, val, lo)
+    local row = Instance.new("Frame", parent)
+    row.Size = UDim2.new(1, 0, 0, 16)
+    row.BackgroundTransparency = 1
+    row.LayoutOrder = lo
+
+    local kLbl = Instance.new("TextLabel", row)
+    kLbl.Size = UDim2.new(0.35, 0, 1, 0)
+    kLbl.BackgroundTransparency = 1
+    kLbl.Text = key
+    kLbl.TextColor3 = C.pink1
+    kLbl.Font = Enum.Font.GothamBold
+    kLbl.TextSize = 8
+    kLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local kGrad = Instance.new("UIGradient", kLbl)
+    kGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 140, 220)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 60, 150)),
+    })
+
+    local vLbl = Instance.new("TextLabel", row)
+    vLbl.Size = UDim2.new(0.65, 0, 1, 0)
+    vLbl.Position = UDim2.new(0.35, 0, 0, 0)
+    vLbl.BackgroundTransparency = 1
+    vLbl.Text = val
+    vLbl.TextColor3 = C.text
+    vLbl.Font = Enum.Font.Gotham
+    vLbl.TextSize = 8
+    vLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    return vLbl
 end
 
-local function removeESP(plr)
-    local e = espData[plr]
-    if e then
-        pcall(function()
-            e.Box:Remove()
-            e.Name:Remove()
-        end)
-        espData[plr] = nil
-    end
-end
+mkInfoRow(infoF, "Executor:", EXECUTOR, 1)
+mkInfoRow(infoF, "Device:", DEVICE, 2)
+mkInfoRow(infoF, "Place:", PLACE, 3)
 
-for _, plr in pairs(Players:GetPlayers()) do createESP(plr) end
-Players.PlayerAdded:Connect(createESP)
-Players.PlayerRemoving:Connect(removeESP)
+-- ================================================================
+--  COMBAT TAB
+-- ================================================================
+local combatF = Instance.new("Frame", Content)
+combatF.Size = UDim2.new(1, 0, 1, 0)
+combatF.BackgroundTransparency = 1
+combatF.Visible = false
+TabContent["Combat"] = combatF
 
--- Аимбот функция
-local function getClosest()
-    local target = nil
-    local minDist = cfg.fovSize
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr == LP then continue end
-        if not plr.Character or not plr.Character:FindFirstChild("Head") then continue end
-        local pos, onScreen = Camera:WorldToViewportPoint(plr.Character.Head.Position)
-        if not onScreen then continue end
-        local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
-        if dist < minDist then
-            minDist = dist
-            target = plr
-        end
-    end
-    return target, minDist
-end
+local combatScroll = mkScroll(combatF)
 
-local function aimAt(plr)
-    if not plr or not plr.Character or not plr.Character:FindFirstChild("Head") then return end
-    local head = plr.Character.Head
-    Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position)
-end
+local AimBody = mkSection(combatScroll, "Aiming", 1)
 
--- Главный цикл
-RunService.RenderStepped:Connect(function()
-    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    circle.Position = center
-    circle.Radius = cfg.fovSize
-    circle.Visible = cfg.showCircle
-    
-    -- Аимбот
-    if cfg.aimbot then
-        local target, dist = getClosest()
-        if target then
-            local keyPressed = false
-            local k = Enum.KeyCode[cfg.aimKey]
-            if k then keyPressed = UIS:IsKeyDown(k) end
-            if keyPressed then
-                aimAt(target)
-                circle.Color = Color3.fromRGB(0,255,0)
-            else
-                circle.Color = Pink.medium
-            end
-        else
-            circle.Color = Pink.medium
-        end
-    else
-        circle.Color = Pink.medium
-    end
-    
-    -- ESP (простой)
-    rainbow = (rainbow + 0.005) % 1
-    local col = Color3.fromHSV(rainbow, 1, 1)
-    for plr, e in pairs(espData) do
-        local char = plr.Character
-        if not char or not char.Parent then
-            e.Box.Visible = false
-            e.Name.Visible = false
-            continue
-        end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        local head = char:FindFirstChild("Head")
-        if not root or not head then
-            e.Box.Visible = false
-            e.Name.Visible = false
-            continue
-        end
-        local top = head.Position + Vector3.new(0, head.Size.Y/2, 0)
-        local bottom = root.Position - Vector3.new(0, root.Size.Y/2, 0)
-        local right = root.Position + root.CFrame:VectorToWorldSpace(Vector3.new(root.Size.X/2,0,0))
-        local left = root.Position + root.CFrame:VectorToWorldSpace(Vector3.new(-root.Size.X/2,0,0))
-        
-        local topV, topOn = Camera:WorldToViewportPoint(top)
-        local bottomV, bottomOn = Camera:WorldToViewportPoint(bottom)
-        local rightV, rightOn = Camera:WorldToViewportPoint(right)
-        local leftV, leftOn = Camera:WorldToViewportPoint(left)
-        
-        if not (topOn or bottomOn or rightOn or leftOn) then
-            e.Box.Visible = false
-            e.Name.Visible = false
-            continue
-        end
-        
-        local height = math.abs(topV.Y - bottomV.Y)
-        local width = math.abs(rightV.X - leftV.X)
-        if height < 5 then height = 5 end
-        if width < 5 then width = 5 end
-        local centerX = (leftV.X + rightV.X)/2
-        local centerY = (topV.Y + bottomV.Y)/2
-        
-        e.Box.Visible = true
-        e.Box.Size = Vector2.new(width, height)
-        e.Box.Position = Vector2.new(centerX - width/2, centerY - height/2)
-        e.Box.Color = col
-        
-        e.Name.Visible = true
-        e.Name.Text = plr.Name
-        e.Name.Position = Vector2.new(centerX, topV.Y - 15)
-        e.Name.Color = col
-    end
+mkToggle(AimBody, "Aimbot", false, function(v)
+    AIM.Enabled = v
+end)
+
+mkSlider(AimBody, "FOV Size", 10, 500, 120, function(v)
+    AIM.FOV = v
 end)
 
 -- ================================================================
---  МОБИЛЬНАЯ КНОПКА
+--  VISUALS TAB
+-- ================================================================
+local visualsF = Instance.new("Frame", Content)
+visualsF.Size = UDim2.new(1, 0, 1, 0)
+visualsF.BackgroundTransparency = 1
+visualsF.Visible = false
+TabContent["Visuals"] = visualsF
+
+local visScroll = mkScroll(visualsF)
+local EspBody = mkSection(visScroll, "ESP", 1)
+mkToggle(EspBody, "Players", false)
+mkToggle(EspBody, "Boxes", false)
+mkToggle(EspBody, "Names", false)
+mkToggle(EspBody, "Health", false)
+mkToggle(EspBody, "Tracers", false)
+mkToggle(EspBody, "Chams", false)
+
+-- ================================================================
+--  MISC TAB
+-- ================================================================
+local miscF = Instance.new("Frame", Content)
+miscF.Size = UDim2.new(1, 0, 1, 0)
+miscF.BackgroundTransparency = 1
+miscF.Visible = false
+TabContent["Misc"] = miscF
+
+local miscScroll = mkScroll(miscF)
+local MovBody = mkSection(miscScroll, "Movement", 1)
+mkToggle(MovBody, "Speed Hack", false)
+mkToggle(MovBody, "Infinite Jump", false)
+mkToggle(MovBody, "No Clip", false)
+mkSlider(MovBody, "Speed", 16, 200, 50)
+mkSlider(MovBody, "Jump Power", 50, 500, 50)
+
+-- ================================================================
+--  CONFIG TAB
+-- ================================================================
+local configF = Instance.new("Frame", Content)
+configF.Size = UDim2.new(1, 0, 1, 0)
+configF.BackgroundTransparency = 1
+configF.Visible = false
+TabContent["Config"] = configF
+
+local cfgScroll = mkScroll(configF)
+local CfgBody = mkSection(cfgScroll, "Settings", 1)
+mkToggle(CfgBody, "Auto Load", false)
+mkToggle(CfgBody, "Save on Exit", false)
+mkToggle(CfgBody, "Notifications", true)
+
+-- ================================================================
+--  МОБИЛЬНАЯ КНОПКА ОТКРЫТИЯ/ЗАКРЫТИЯ
 -- ================================================================
 if isMobile() then
     local btnGui = Instance.new("ScreenGui")
-    btnGui.Name = "SinyxWareButton"
+    btnGui.Name = "SWMobileBtn"
     btnGui.ResetOnSpawn = false
     btnGui.Parent = CG
 
-    local mobileButton = Instance.new("ImageButton")
-    mobileButton.Size = UDim2.new(0, 50, 0, 50)
-    mobileButton.Position = UDim2.new(1, -60, 0.5, -25)
-    mobileButton.Image = "rbxassetid://73073995075962"
-    mobileButton.BackgroundTransparency = 1
-    mobileButton.Parent = btnGui
-    mobileButton.ZIndex = 999
+    local mBtn = Instance.new("TextButton", btnGui)
+    mBtn.Size = UDim2.new(0, 44, 0, 44)
+    mBtn.Position = UDim2.new(1, -54, 0.5, -22)
+    mBtn.BackgroundColor3 = C.pink2
+    mBtn.BorderSizePixel = 0
+    mBtn.Text = "SW"
+    mBtn.TextColor3 = C.white
+    mBtn.Font = Enum.Font.GothamBold
+    mBtn.TextSize = 10
+    mBtn.AutoButtonColor = false
+    mBtn.ZIndex = 999
+    corner(mBtn, 22)
 
-    local btnDrag = {active = false, start = nil, offset = nil}
-    mobileButton.InputBegan:Connect(function(i)
+    local mBtnGrad = Instance.new("UIGradient", mBtn)
+    mBtnGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 210)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 30, 120)),
+    })
+    mBtnGrad.Rotation = 135
+
+    local stroke = Instance.new("UIStroke", mBtn)
+    stroke.Color = C.pink1
+    stroke.Thickness = 1.5
+
+    local mbDrag = {active = false, start = nil, offset = nil, moved = false}
+    mBtn.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.Touch then
-            btnDrag.active = true
-            btnDrag.start = i.Position
-            btnDrag.offset = mobileButton.Position
+            mbDrag.active = true
+            mbDrag.start = i.Position
+            mbDrag.offset = mBtn.Position
+            mbDrag.moved = false
         end
     end)
-    mobileButton.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.Touch then btnDrag.active = false end
+
+    mBtn.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.Touch then
+            mbDrag.active = false
+            if not mbDrag.moved then
+                Root.Enabled = not Root.Enabled
+            end
+        end
     end)
+
     UIS.InputChanged:Connect(function(i)
-        if btnDrag.active and i.UserInputType == Enum.UserInputType.Touch then
-            local delta = i.Position - btnDrag.start
-            mobileButton.Position = UDim2.new(
-                btnDrag.offset.X.Scale, btnDrag.offset.X.Offset + delta.X,
-                btnDrag.offset.Y.Scale, btnDrag.offset.Y.Offset + delta.Y
+        if mbDrag.active and i.UserInputType == Enum.UserInputType.Touch then
+            local d = i.Position - mbDrag.start
+            if d.Magnitude > 5 then mbDrag.moved = true end
+            mBtn.Position = UDim2.new(
+                mbDrag.offset.X.Scale, mbDrag.offset.X.Offset + d.X,
+                mbDrag.offset.Y.Scale, mbDrag.offset.Y.Offset + d.Y
             )
         end
     end)
-
-    local function toggleGUI()
-        Root.Enabled = not Root.Enabled
-        circle.Visible = Root.Enabled and cfg.showCircle
-    end
-    mobileButton.MouseButton1Click:Connect(toggleGUI)
-    mobileButton.TouchTap:Connect(toggleGUI)
+else
+    UIS.InputBegan:Connect(function(i, gpe)
+        if gpe then return end
+        if i.KeyCode == Enum.KeyCode.Insert then
+            Root.Enabled = not Root.Enabled
+        end
+    end)
 end
 
--- ================================================================
---  ХОТКЕИ (ПК)
--- ================================================================
-UIS.InputBegan:Connect(function(i, gpe)
-    if gpe then return end
-    if i.KeyCode == Enum.KeyCode.Insert then
-        Root.Enabled = not Root.Enabled
-        circle.Visible = Root.Enabled and cfg.showCircle
-    end
-end)
-
-Root.Enabled = true
-print("SinyxWare v8.0 loaded. Press Insert to toggle GUI.")
+print("[SinyxWare] Loaded | " .. DEVICE .. " | " .. EXECUTOR)
