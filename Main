@@ -1,5 +1,5 @@
 -- ================================================================
---  SINYXWARE GUI v12 | WORKING RESIZE + ALL FUNCTIONS
+--  SINYXWARE v13 | FULL REWORK COMBAT + SEARCH + RESIZE FIX
 --  Автор: GothbreachHelper
 -- ================================================================
 
@@ -52,116 +52,82 @@ end
 local currentExecutor = DetectExecutor()
 
 -- ================================================================
---  УВЕДОМЛЕНИЕ ПРИ ИНЖЕКТЕ
+--  УВЕДОМЛЕНИЕ ПРИ ИНЖЕКТЕ (сокращён для длины)
 -- ================================================================
 task.spawn(function()
-    local old_notif = CG:FindFirstChild("SinyxWare_Notification_Fixed_Tight")
-    if old_notif then old_notif:Destroy() end
-    local TweenService = game:GetService("TweenService")
-    local SoundService = game:GetService("SoundService")
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "SinyxWare_Notification_Fixed_Tight"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.Parent = CG
-    local NotificationSound = Instance.new("Sound")
-    NotificationSound.SoundId = "rbxassetid://7383525713"
-    NotificationSound.Volume = 1.5
-    NotificationSound.Parent = SoundService
-    local NotifFrame = Instance.new("Frame")
-    NotifFrame.Name = "NotifFrame"
-    NotifFrame.Size = UDim2.new(0, 260, 0, 50)
-    NotifFrame.Position = UDim2.new(1, 50, 0, 40)
-    NotifFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    NotifFrame.BorderSizePixel = 0
-    NotifFrame.Parent = ScreenGui
-    local BackgroundGradient = Instance.new("UIGradient")
-    BackgroundGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 20, 240)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 140))
-    })
-    BackgroundGradient.Rotation = 45
-    BackgroundGradient.Parent = NotifFrame
-    local ProgressBackground = Instance.new("Frame")
-    ProgressBackground.Size = UDim2.new(1, 0, 0, 2)
-    ProgressBackground.Position = UDim2.new(0, 0, 1, -2)
-    ProgressBackground.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    ProgressBackground.BackgroundTransparency = 0.75
-    ProgressBackground.BorderSizePixel = 0
-    ProgressBackground.Parent = NotifFrame
-    local progressDuration = 7.0
-    local ProgressBar = Instance.new("Frame")
-    ProgressBar.Size = UDim2.new(0, 0, 1, 0)
-    ProgressBar.Position = UDim2.new(0, 0, 0, 0)
-    ProgressBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    ProgressBar.BorderSizePixel = 0
-    ProgressBar.Parent = ProgressBackground
-    local TitleContainer = Instance.new("Frame")
-    TitleContainer.Size = UDim2.new(1, -20, 0, 22)
-    TitleContainer.Position = UDim2.new(0, 12, 0, 6)
-    TitleContainer.BackgroundTransparency = 1
-    TitleContainer.Parent = NotifFrame
-    local BrandLabel = Instance.new("TextLabel")
-    BrandLabel.Size = UDim2.new(1, 0, 1, 0)
-    BrandLabel.BackgroundTransparency = 1
-    BrandLabel.Text = "Sinyxware"
-    BrandLabel.TextSize = 14
-    BrandLabel.Font = Enum.Font.SourceSansBold
-    BrandLabel.TextXAlignment = Enum.TextXAlignment.Left
-    BrandLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    BrandLabel.Parent = TitleContainer
-    local BrandGradient = Instance.new("UIGradient")
-    BrandGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 210, 245)),
-        ColorSequenceKeypoint.new(0.49, Color3.fromRGB(180, 0, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 10, 50)),
-        ColorSequenceKeypoint.new(1.0, Color3.fromRGB(255, 120, 180))
-    })
-    BrandGradient.Rotation = 0
-    BrandGradient.Parent = BrandLabel
-    local LoadedLabel = Instance.new("TextLabel")
-    LoadedLabel.Size = UDim2.new(1, 0, 1, 0)
-    LoadedLabel.Position = UDim2.new(0, 65, 0, 0)
-    LoadedLabel.BackgroundTransparency = 1
-    LoadedLabel.Text = " loaded"
-    LoadedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    LoadedLabel.TextSize = 14
-    LoadedLabel.Font = Enum.Font.SourceSansBold
-    LoadedLabel.TextXAlignment = Enum.TextXAlignment.Left
-    LoadedLabel.Parent = TitleContainer
-    local LoadedGradient = Instance.new("UIGradient")
-    LoadedGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 180, 230)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(235, 20, 140))
-    })
-    LoadedGradient.Rotation = 45
-    LoadedGradient.Parent = LoadedLabel
-    local SubLabel = Instance.new("TextLabel")
-    SubLabel.Size = UDim2.new(1, -20, 0, 16)
-    SubLabel.Position = UDim2.new(0, 12, 0, 26)
-    SubLabel.BackgroundTransparency = 1
-    SubLabel.Text = "press Insert to open/close GUI"
-    SubLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SubLabel.TextSize = 11
-    SubLabel.Font = Enum.Font.SourceSansItalic
-    SubLabel.TextXAlignment = Enum.TextXAlignment.Left
-    SubLabel.Parent = NotifFrame
-    local tweenInfoIn = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
-    local tweenInfoOut = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
-    local tweenInfoProgress = TweenInfo.new(progressDuration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
-    local targetPosIn = UDim2.new(1, -280, 0, 40)
-    local targetPosOut = UDim2.new(1, 50, 0, 40)
-    local animateIn = TweenService:Create(NotifFrame, tweenInfoIn, {Position = targetPosIn})
-    local animateOut = TweenService:Create(NotifFrame, tweenInfoOut, {Position = targetPosOut})
-    local animateProgress = TweenService:Create(ProgressBar, tweenInfoProgress, {Size = UDim2.new(1, 0, 1, 0)})
-    pcall(function() NotificationSound:Play() end)
-    animateIn:Play()
-    animateIn.Completed:Connect(function() animateProgress:Play() end)
-    task.wait(progressDuration + 0.8)
-    animateOut:Play()
-    animateOut.Completed:Connect(function()
-        pcall(function() NotificationSound:Destroy() end)
-        ScreenGui:Destroy()
-    end)
+    local old = CG:FindFirstChild("SinyxWare_Notification")
+    if old then old:Destroy() end
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "SinyxWare_Notification"
+    sg.ResetOnSpawn = false
+    sg.Parent = CG
+    local f = Instance.new("Frame", sg)
+    f.Size = UDim2.new(0, 260, 0, 50)
+    f.Position = UDim2.new(1, 50, 0, 40)
+    f.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    f.BorderSizePixel = 0
+    local g = Instance.new("UIGradient", f)
+    g.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(160,20,240)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,140))})
+    g.Rotation = 45
+    local pb = Instance.new("Frame", f)
+    pb.Size = UDim2.new(1,0,0,2)
+    pb.Position = UDim2.new(0,0,1,-2)
+    pb.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    pb.BackgroundTransparency = 0.75
+    local prog = Instance.new("Frame", pb)
+    prog.Size = UDim2.new(0,0,1,0)
+    prog.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    local tc = Instance.new("Frame", f)
+    tc.Size = UDim2.new(1,-20,0,22)
+    tc.Position = UDim2.new(0,12,0,6)
+    tc.BackgroundTransparency = 1
+    local bl = Instance.new("TextLabel", tc)
+    bl.Size = UDim2.new(1,0,1,0)
+    bl.BackgroundTransparency = 1
+    bl.Text = "Sinyxware"
+    bl.TextSize = 14
+    bl.Font = Enum.Font.SourceSansBold
+    bl.TextXAlignment = Enum.TextXAlignment.Left
+    bl.TextColor3 = Color3.fromRGB(255,255,255)
+    local bg = Instance.new("UIGradient", bl)
+    bg.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255,210,245)), ColorSequenceKeypoint.new(0.49, Color3.fromRGB(180,0,255)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,10,50)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255,120,180))})
+    local ll = Instance.new("TextLabel", tc)
+    ll.Size = UDim2.new(1,0,1,0)
+    ll.Position = UDim2.new(0,65,0,0)
+    ll.BackgroundTransparency = 1
+    ll.Text = " loaded"
+    ll.TextColor3 = Color3.fromRGB(255,255,255)
+    ll.TextSize = 14
+    ll.Font = Enum.Font.SourceSansBold
+    ll.TextXAlignment = Enum.TextXAlignment.Left
+    local lg = Instance.new("UIGradient", ll)
+    lg.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255,180,230)), ColorSequenceKeypoint.new(1, Color3.fromRGB(235,20,140))})
+    lg.Rotation = 45
+    local sub = Instance.new("TextLabel", f)
+    sub.Size = UDim2.new(1,-20,0,16)
+    sub.Position = UDim2.new(0,12,0,26)
+    sub.BackgroundTransparency = 1
+    sub.Text = "press Insert to open/close GUI"
+    sub.TextColor3 = Color3.fromRGB(255,255,255)
+    sub.TextSize = 11
+    sub.Font = Enum.Font.SourceSansItalic
+    sub.TextXAlignment = Enum.TextXAlignment.Left
+    local tw = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
+    local tw2 = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
+    local twp = TweenInfo.new(7, Enum.EasingStyle.Linear)
+    local aIn = TS:Create(f, tw, {Position = UDim2.new(1, -280, 0, 40)})
+    local aOut = TS:Create(f, tw2, {Position = UDim2.new(1, 50, 0, 40)})
+    local aProg = TS:Create(prog, twp, {Size = UDim2.new(1,0,1,0)})
+    local snd = Instance.new("Sound")
+    snd.SoundId = "rbxassetid://7383525713"
+    snd.Volume = 1.5
+    snd.Parent = game:GetService("SoundService")
+    pcall(function() snd:Play() end)
+    aIn:Play()
+    aIn.Completed:Connect(function() aProg:Play() end)
+    task.wait(7.8)
+    aOut:Play()
+    aOut.Completed:Connect(function() sg:Destroy() end)
 end)
 
 -- ================================================================
@@ -278,8 +244,7 @@ local function mkSlider(parent, label, mn, mx, def, callback)
     end
     track.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            sliding = true
-            upd(i.Position.X)
+            sliding = true; upd(i.Position.X)
         end
     end)
     UIS.InputChanged:Connect(function(i)
@@ -293,6 +258,54 @@ local function mkSlider(parent, label, mn, mx, def, callback)
         end
     end)
     return wrap, function() return val end
+end
+
+local function mkColorPicker(parent, label, defaultColor, callback)
+    local wrap = Instance.new("Frame", parent)
+    wrap.Size = UDim2.new(1, 0, 0, 20)
+    wrap.BackgroundTransparency = 1
+    local lbl = Instance.new("TextLabel", wrap)
+    lbl.Size = UDim2.new(0.5, 0, 1, 0)
+    lbl.Position = UDim2.new(0, 0, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 7
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    local colorBtn = Instance.new("TextButton", wrap)
+    colorBtn.Size = UDim2.new(0, 20, 0, 16)
+    colorBtn.Position = UDim2.new(0.5, 5, 0.5, -8)
+    colorBtn.BackgroundColor3 = defaultColor
+    colorBtn.BorderSizePixel = 0
+    corner(colorBtn, 2)
+    colorBtn.Text = ""
+    colorBtn.AutoButtonColor = false
+    local colorBox = Instance.new("TextBox", wrap)
+    colorBox.Size = UDim2.new(0.3, 0, 1, 0)
+    colorBox.Position = UDim2.new(0.7, 0, 0, 0)
+    colorBox.BackgroundColor3 = C.section
+    colorBox.Text = ""
+    colorBox.PlaceholderText = "RGB"
+    colorBox.PlaceholderColor3 = C.dim
+    colorBox.TextColor3 = C.text
+    colorBox.Font = Enum.Font.Gotham
+    colorBox.TextSize = 7
+    colorBox.BorderSizePixel = 0
+    corner(colorBox, 2)
+    local currentColor = defaultColor
+    colorBox.FocusLost:Connect(function()
+        local r,g,b = colorBox.Text:match("(%d+),%s*(%d+),%s*(%d+)")
+        if r and g and b then
+            r = math.clamp(tonumber(r),0,255)
+            g = math.clamp(tonumber(g),0,255)
+            b = math.clamp(tonumber(b),0,255)
+            currentColor = Color3.fromRGB(r,g,b)
+            colorBtn.BackgroundColor3 = currentColor
+            if callback then callback(currentColor) end
+        end
+    end)
+    return wrap, function() return currentColor end
 end
 
 local function mkDropdown(parent, label, options, default, callback)
@@ -333,7 +346,7 @@ local function mkDropdown(parent, label, options, default, callback)
     arr.Font = Enum.Font.GothamBold
     arr.TextSize = 6
     local idx = 1
-    for i, v in ipairs(options) do if v == default then idx = i end end
+    for i,v in ipairs(options) do if v == default then idx = i end end
     btn.MouseButton1Click:Connect(function()
         idx = (idx % #options) + 1
         cur.Text = options[idx]
@@ -400,7 +413,7 @@ local function mkTabContent(name, ContentArea)
     f.Position = UDim2.new(0, 0, 0, 22)
     f.BackgroundTransparency = 1
     f.BorderSizePixel = 0
-    f.ScrollBarThickness = 2
+    f.ScrollBarThickness = 6
     f.ScrollBarImageColor3 = C.red
     f.AutomaticCanvasSize = Enum.AutomaticSize.Y
     f.CanvasSize = UDim2.new()
@@ -452,7 +465,7 @@ gradOuter.Color = ColorSequence.new{
 }
 Instance.new("UICorner", Outer).CornerRadius = UDim.new(0, 4)
 
--- Ресайз хэндл
+-- РЕСАЙЗ ХЭНДЛ (РАБОТАЕТ)
 local ResizeHandle = Instance.new("Frame", Outer)
 ResizeHandle.Size = UDim2.new(0, 16, 0, 16)
 ResizeHandle.Position = UDim2.new(1, -16, 1, -16)
@@ -460,7 +473,6 @@ ResizeHandle.BackgroundColor3 = Color3.fromRGB(80, 40, 70)
 ResizeHandle.BorderSizePixel = 0
 corner(ResizeHandle, 4)
 ResizeHandle.ZIndex = 999
-
 local icon = Instance.new("TextLabel", ResizeHandle)
 icon.Size = UDim2.new(1, 0, 1, 0)
 icon.BackgroundTransparency = 1
@@ -474,36 +486,28 @@ icon.ZIndex = 1000
 local resizing = false
 local resizeStart = nil
 local startSize = nil
-local startPos = nil
 
 ResizeHandle.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         resizing = true
         resizeStart = input.Position
         startSize = Outer.Size
-        startPos = Outer.Position
-        input.StopPropagation() -- блокируем драг
+        input.StopPropagation()
     end
 end)
-
 ResizeHandle.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        resizing = false
-    end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
 end)
-
 UIS.InputChanged:Connect(function(input)
     if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - resizeStart
         local newW = math.max(300, startSize.X.Offset + delta.X)
         local newH = math.max(200, startSize.Y.Offset + delta.Y)
         Outer.Size = UDim2.new(0, newW, 0, newH)
-        -- центр не смещаем, но чтобы окно не уезжало, скорректируем позицию
         Outer.Position = UDim2.new(0.5, -newW/2, 0.5, -newH/2)
     end
 end)
 
--- Main
 local Main = Instance.new("Frame", Outer)
 Main.Size = UDim2.new(1, -4, 1, -4)
 Main.Position = UDim2.new(0, 2, 0, 2)
@@ -517,33 +521,26 @@ gradMain.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 15, 25))
 }
 
--- Drag
+-- DRAG
 local drag, dstart, ostart = false, nil, nil
 Main.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        if not resizing then
-            drag = true
-            dstart = i.Position
-            ostart = Outer.Position
-        end
+    if (i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch) and not resizing then
+        drag = true
+        dstart = i.Position
+        ostart = Outer.Position
     end
 end)
 Main.InputEnded:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-        drag = false
-    end
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end
 end)
 UIS.InputChanged:Connect(function(i)
     if drag and not resizing and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
         local d = i.Position - dstart
-        Outer.Position = UDim2.new(
-            ostart.X.Scale, ostart.X.Offset + d.X,
-            ostart.Y.Scale, ostart.Y.Offset + d.Y
-        )
+        Outer.Position = UDim2.new(ostart.X.Scale, ostart.X.Offset + d.X, ostart.Y.Scale, ostart.Y.Offset + d.Y)
     end
 end)
 
--- Sidebar
+-- SIDEBAR
 local Sidebar = Instance.new("Frame", Main)
 Sidebar.Size = UDim2.new(0, SW, 1, 0)
 Sidebar.BackgroundColor3 = C.sidebar
@@ -577,35 +574,32 @@ TDiv.BackgroundColor3 = C.border
 TDiv.BorderSizePixel = 0
 
 local TABS = {
-    { n = "Home",    ico = "⌂" },
-    { n = "Combat",  ico = "✖" },
-    { n = "Visuals", ico = "◎" },
-    { n = "Misc",    ico = "◉" },
-    { n = "Config",  ico = "⚙" },
+    {n="Home", ico="⌂"},
+    {n="Combat", ico="✖"},
+    {n="Visuals", ico="◎"},
+    {n="Misc", ico="◉"},
+    {n="Config", ico="⚙"}
 }
 local TabBtns = {}
 local currentTab = "Home"
 local TabContents = {}
-
 local NavF = Instance.new("Frame", Sidebar)
 NavF.Size = UDim2.new(1, 0, 1, -28)
 NavF.Position = UDim2.new(0, 0, 0, 28)
 NavF.BackgroundTransparency = 1
 local NavL = Instance.new("UIListLayout", NavF)
-NavL.Padding = UDim.new(0, 0)
+NavL.Padding = UDim.new(0,0)
 NavL.SortOrder = Enum.SortOrder.LayoutOrder
 
 local function setTab(name)
     currentTab = name
-    for n, t in pairs(TabBtns) do
+    for n,t in pairs(TabBtns) do
         local on = n == name
         t.bar.BackgroundTransparency = on and 0 or 1
         t.ico.TextColor3 = on and C.red or C.dim
         t.lbl.TextColor3 = on and C.white or C.dim
     end
-    for n, f in pairs(TabContents) do
-        f.Visible = n == name
-    end
+    for n,f in pairs(TabContents) do f.Visible = n == name end
 end
 
 for i, tab in ipairs(TABS) do
@@ -621,25 +615,25 @@ for i, tab in ipairs(TABS) do
     bar.BackgroundColor3 = C.red
     bar.BorderSizePixel = 0
     bar.BackgroundTransparency = tab.n == "Home" and 0 or 1
-    Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 1)
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(0,1)
     local ico = Instance.new("TextLabel", btn)
-    ico.Size = UDim2.new(0, 18, 1, 0)
-    ico.Position = UDim2.new(0, 8, 0, 0)
+    ico.Size = UDim2.new(0,18,1,0)
+    ico.Position = UDim2.new(0,8,0,0)
     ico.BackgroundTransparency = 1
     ico.Text = tab.ico
     ico.Font = Enum.Font.GothamBold
     ico.TextSize = 8
     ico.TextColor3 = tab.n == "Home" and C.red or C.dim
     local lbl = Instance.new("TextLabel", btn)
-    lbl.Size = UDim2.new(1, -28, 1, 0)
-    lbl.Position = UDim2.new(0, 26, 0, 0)
+    lbl.Size = UDim2.new(1,-28,1,0)
+    lbl.Position = UDim2.new(0,26,0,0)
     lbl.BackgroundTransparency = 1
     lbl.Text = tab.n
     lbl.Font = Enum.Font.Gotham
     lbl.TextSize = 7
     lbl.TextColor3 = tab.n == "Home" and C.white or C.dim
     lbl.TextXAlignment = Enum.TextXAlignment.Left
-    TabBtns[tab.n] = { bar = bar, ico = ico, lbl = lbl }
+    TabBtns[tab.n] = {bar=bar, ico=ico, lbl=lbl}
     btn.MouseButton1Click:Connect(function() setTab(tab.n) end)
 end
 
@@ -649,8 +643,9 @@ ContentArea.Position = UDim2.new(0, SW+1, 0, 0)
 ContentArea.BackgroundTransparency = 1
 ContentArea.ClipsDescendants = true
 
+-- TOPBAR (уменьшен до 17px для ровной линии)
 local TopBar = Instance.new("Frame", ContentArea)
-TopBar.Size = UDim2.new(1, 0, 0, 21)
+TopBar.Size = UDim2.new(1, 0, 0, 17)
 TopBar.BackgroundColor3 = C.sidebar
 TopBar.BorderSizePixel = 0
 local gradTop = Instance.new("UIGradient", TopBar)
@@ -670,7 +665,7 @@ SearchBox.Size = UDim2.new(1, -40, 1, -4)
 SearchBox.Position = UDim2.new(0, 20, 0, 2)
 SearchBox.BackgroundTransparency = 1
 SearchBox.Text = ""
-SearchBox.PlaceholderText = "Search"
+SearchBox.PlaceholderText = "Search..."
 SearchBox.PlaceholderColor3 = C.dim
 SearchBox.TextColor3 = C.text
 SearchBox.Font = Enum.Font.Gotham
@@ -686,13 +681,14 @@ MoveIco.TextSize = 7
 MoveIco.TextColor3 = C.dim
 MoveIco.Font = Enum.Font.GothamBold
 MoveIco.BorderSizePixel = 0
-Instance.new("UICorner", MoveIco).CornerRadius = UDim.new(0, 2)
+Instance.new("UICorner", MoveIco).CornerRadius = UDim.new(0,2)
 local TopDiv = Instance.new("Frame", ContentArea)
 TopDiv.Size = UDim2.new(1, 0, 0, 1)
-TopDiv.Position = UDim2.new(0, 0, 0, 21)
+TopDiv.Position = UDim2.new(0, 0, 0, 17)
 TopDiv.BackgroundColor3 = C.border
 TopDiv.BorderSizePixel = 0
 
+-- BOTTOM BAR
 local BotBar = Instance.new("Frame", Main)
 BotBar.Size = UDim2.new(1, -SW, 0, 14)
 BotBar.Position = UDim2.new(0, SW, 1, -14)
@@ -709,9 +705,9 @@ BotDiv.Position = UDim2.new(0, SW, 1, -15)
 BotDiv.BackgroundColor3 = C.border
 BotDiv.BorderSizePixel = 0
 local BotLbl = Instance.new("TextLabel", BotBar)
-BotLbl.Size = UDim2.new(1, 0, 1, 0)
+BotLbl.Size = UDim2.new(1,0,1,0)
 BotLbl.BackgroundTransparency = 1
-BotLbl.Text = "SinyxWare v12"
+BotLbl.Text = "SinyxWare v13"
 BotLbl.TextColor3 = C.dim
 BotLbl.Font = Enum.Font.Gotham
 BotLbl.TextSize = 7
@@ -729,6 +725,9 @@ local targetPart = "Head"
 local lockTarget = nil
 local lockButtonEnabled = false
 local wallCheckEnabled = false
+local visibleCheckEnabled = false
+local aimMode = "Smooth"
+local circleColor = Color3.fromRGB(220, 50, 100)
 
 local espEnabled = false
 local espShowBox = true
@@ -765,46 +764,46 @@ local mobileButton = nil
 local visible = true
 
 -- ================================================================
---  ВИЗУАЛЫ
+--  ВИЗУАЛЫ (Aura, Skybox, Fog, Pulse, Particles) – без изменений
 -- ================================================================
 local function applyPerfectAura(part)
     if part:FindFirstChild("EdgeAura") then part.EdgeAura:Destroy() end
     local particles = Instance.new("ParticleEmitter")
     particles.Name = "EdgeAura"
-    particles.Color = ColorSequence.new(Color3.fromRGB(148, 0, 211))
+    particles.Color = ColorSequence.new(Color3.fromRGB(148,0,211))
     particles.LightEmission = 1
     particles.LightInfluence = 0
     particles.LockedToPart = true
     particles.Rate = 40
-    particles.Lifetime = NumberRange.new(0.4, 0.6)
-    particles.Speed = NumberRange.new(0, 0.2)
-    particles.SpreadAngle = Vector2.new(180, 180)
+    particles.Lifetime = NumberRange.new(0.4,0.6)
+    particles.Speed = NumberRange.new(0,0.2)
+    particles.SpreadAngle = Vector2.new(180,180)
     particles.Size = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.4),
-        NumberSequenceKeypoint.new(0.4, 1.5),
-        NumberSequenceKeypoint.new(1, 3.5)
+        NumberSequenceKeypoint.new(0,0.4),
+        NumberSequenceKeypoint.new(0.4,1.5),
+        NumberSequenceKeypoint.new(1,3.5)
     })
     particles.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.1),
-        NumberSequenceKeypoint.new(1, 1)
+        NumberSequenceKeypoint.new(0,0.1),
+        NumberSequenceKeypoint.new(1,1)
     })
     particles.Parent = part
     table.insert(activeEmitters, particles)
 end
 
 local function setupAura()
-    for _, emitter in pairs(activeEmitters) do pcall(function() emitter:Destroy() end) end
+    for _,emitter in pairs(activeEmitters) do pcall(function() emitter:Destroy() end) end
     activeEmitters = {}
     local char = LP.Character
     if not char then return end
     auraCharacter = char
-    for _, obj in pairs(char:GetDescendants()) do
+    for _,obj in pairs(char:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then applyPerfectAura(obj) end
     end
 end
 
 local function removeAura()
-    for _, emitter in pairs(activeEmitters) do pcall(function() emitter:Destroy() end) end
+    for _,emitter in pairs(activeEmitters) do pcall(function() emitter:Destroy() end) end
     activeEmitters = {}
 end
 
@@ -814,9 +813,8 @@ RunService.RenderStepped:Connect(function()
     if not head then return end
     local dist = (Camera.CFrame.Position - head.Position).Magnitude
     local shouldShow = dist >= 2
-    for _, emitter in pairs(activeEmitters) do if emitter and emitter.Parent then emitter.Enabled = shouldShow end end
+    for _,emitter in pairs(activeEmitters) do if emitter and emitter.Parent then emitter.Enabled = shouldShow end end
 end)
-
 LP.CharacterAdded:Connect(function(newChar)
     auraCharacter = newChar
     task.wait(0.5)
@@ -824,19 +822,14 @@ LP.CharacterAdded:Connect(function(newChar)
 end)
 
 local function applySkybox()
-    for _, child in ipairs(Lighting:GetChildren()) do if child:IsA("Sky") then child:Destroy() end end
+    for _,child in ipairs(Lighting:GetChildren()) do if child:IsA("Sky") then child:Destroy() end end
     galaxySkyObj = Instance.new("Sky")
     galaxySkyObj.Name = "PinkGalaxySky"
-    local assetId = "rbxassetid://159454299"
-    galaxySkyObj.SkyboxBk = assetId
-    galaxySkyObj.SkyboxDn = assetId
-    galaxySkyObj.SkyboxFt = assetId
-    galaxySkyObj.SkyboxLf = assetId
-    galaxySkyObj.SkyboxRt = assetId
-    galaxySkyObj.SkyboxUp = assetId
+    local id = "rbxassetid://159454299"
+    galaxySkyObj.SkyboxBk = id; galaxySkyObj.SkyboxDn = id; galaxySkyObj.SkyboxFt = id
+    galaxySkyObj.SkyboxLf = id; galaxySkyObj.SkyboxRt = id; galaxySkyObj.SkyboxUp = id
     galaxySkyObj.Parent = Lighting
 end
-
 local function removeSkybox()
     if galaxySkyObj and galaxySkyObj.Parent then galaxySkyObj:Destroy() end
     galaxySkyObj = nil
@@ -846,11 +839,10 @@ local function applyFog()
     if fogEnabled then
         Lighting.FogEnd = fogDistance
         Lighting.FogStart = fogDistance * 0.1
-        Lighting.FogColor = Color3.fromRGB(200, 150, 200)
+        Lighting.FogColor = Color3.fromRGB(200,150,200)
         Lighting.Fog = true
     end
 end
-
 local function removeFog() Lighting.Fog = false end
 
 local function createPulse()
@@ -862,23 +854,20 @@ local function createPulse()
     pulseObject.CanCollide = false
     pulseObject.Material = Enum.Material.Neon
     pulseObject.Shape = Enum.PartType.Ball
-    pulseObject.Color = Color3.fromRGB(255, 100, 200)
+    pulseObject.Color = Color3.fromRGB(255,100,200)
     pulseObject.Transparency = 0.5
-    pulseObject.Size = Vector3.new(pulseSize, pulseSize, pulseSize)
+    pulseObject.Size = Vector3.new(pulseSize,pulseSize,pulseSize)
     pulseObject.Parent = workspace
     local char = LP.Character
     if char and char:FindFirstChild("HumanoidRootPart") then pulseObject.Position = char.HumanoidRootPart.Position end
 end
-
 local function updatePulse()
-    if pulseObject then pulseObject.Size = Vector3.new(pulseSize, pulseSize, pulseSize) end
+    if pulseObject then pulseObject.Size = Vector3.new(pulseSize,pulseSize,pulseSize) end
 end
-
 local function removePulse()
     if pulseObject then pulseObject:Destroy() end
     pulseObject = nil
 end
-
 RunService.RenderStepped:Connect(function()
     if pulseEnabled and pulseObject then
         local char = LP.Character
@@ -887,7 +876,6 @@ RunService.RenderStepped:Connect(function()
 end)
 
 local function getParticleDelay() return 0.25 / particleMultiplier end
-
 local function spawnParticle(rootPart)
     if not ParticleFolder or not ParticleFolder.Parent then
         ParticleFolder = workspace:FindFirstChild("GlobalPinkParticles")
@@ -897,8 +885,8 @@ local function spawnParticle(rootPart)
             ParticleFolder.Parent = workspace
         end
     end
-    local angle = math.rad(math.random(0, 360))
-    local distance = math.random(5, 60)
+    local angle = math.rad(math.random(0,360))
+    local distance = math.random(5,60)
     local spawnPos = rootPart.Position + Vector3.new(math.cos(angle)*distance, math.random(-10,25), math.sin(angle)*distance)
     local sz = math.random(4,12)/10
     local p = Instance.new("Part")
@@ -921,7 +909,6 @@ local function spawnParticle(rootPart)
     tween:Play()
     tween.Completed:Connect(function() p:Destroy() end)
 end
-
 task.spawn(function()
     while true do
         local delay = getParticleDelay()
@@ -945,7 +932,7 @@ local function getConfigList()
     ensureConfigFolder()
     local files = listfiles(configDir)
     local names = {}
-    for _, file in ipairs(files) do
+    for _,file in ipairs(files) do
         local name = file:match("([^/\\]+)%.json$")
         if name then table.insert(names, name) end
     end
@@ -962,7 +949,10 @@ local function saveConfig(name)
             smoothness = smoothness,
             prediction = prediction,
             targetPart = targetPart,
-            wallCheck = wallCheckEnabled
+            wallCheck = wallCheckEnabled,
+            visibleCheck = visibleCheckEnabled,
+            aimMode = aimMode,
+            circleColor = {r=circleColor.R*255, g=circleColor.G*255, b=circleColor.B*255}
         },
         esp = {
             enabled = espEnabled,
@@ -1006,6 +996,10 @@ local function loadConfig(name)
         prediction = config.aimbot.prediction or 0
         targetPart = config.aimbot.targetPart or "Head"
         wallCheckEnabled = config.aimbot.wallCheck or false
+        visibleCheckEnabled = config.aimbot.visibleCheck or false
+        aimMode = config.aimbot.aimMode or "Smooth"
+        local c = config.aimbot.circleColor
+        if c then circleColor = Color3.fromRGB(c.r or 220, c.g or 50, c.b or 100) end
     end
     if config.esp then
         espEnabled = config.esp.enabled or false
@@ -1031,14 +1025,14 @@ local function loadConfig(name)
         pulseEnabled = config.visuals.pulseEnabled or false
         pulseSize = config.visuals.pulseSize or 5
     end
-    if espEnabled then for _, player in ipairs(Players:GetPlayers()) do if player ~= LP then createESP(player) end end end
+    if espEnabled then for _,p in ipairs(Players:GetPlayers()) do if p ~= LP then createESP(p) end end end
     if auraEnabled then setupAura() else removeAura() end
     if skyboxEnabled then applySkybox() else removeSkybox() end
     if fogEnabled then applyFog() else removeFog() end
     if pulseEnabled then createPulse() else removePulse() end
-    if speedHackEnabled then local char=LP.Character; if char and char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed=speedValue end end
-    if infJumpEnabled then local char=LP.Character; if char and char:FindFirstChild("Humanoid") then originalJumpPower=char.Humanoid.JumpPower; char.Humanoid.JumpPower=9999 end end
-    if noClipEnabled then local char=LP.Character; if char then for _, part in ipairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide=false end end end end
+    if speedHackEnabled then local c=LP.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = speedValue end end
+    if infJumpEnabled then local c=LP.Character; if c and c:FindFirstChild("Humanoid") then originalJumpPower = c.Humanoid.JumpPower; c.Humanoid.JumpPower = 9999 end end
+    if noClipEnabled then local c=LP.Character; if c then for _,part in ipairs(c:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end end end
     return true
 end
 
@@ -1057,6 +1051,7 @@ local function createTab(name)
     return colL, colR
 end
 
+-- HOME
 local HL, HR = createTab("Home")
 local infoFrame = Instance.new("Frame", HL)
 infoFrame.Size = UDim2.new(1,0,0,0)
@@ -1080,16 +1075,30 @@ infoText.TextXAlignment = Enum.TextXAlignment.Left
 infoText.TextYAlignment = Enum.TextYAlignment.Top
 infoText.LineHeight = 1.2
 
+-- ================================================================
+--  COMBAT (ПОЛНОСТЬЮ ПЕРЕРАБОТАН)
+-- ================================================================
 local CL, CR = createTab("Combat")
-local aimSection = mkSection(CL, "Aimbot Settings", 1)
-mkToggle(aimSection, "Enable Aimbot", false, function(val) aimbotEnabled = val; if not val then lockTarget = nil end end)
-mkToggle(aimSection, "Show Circle", false, function(val) aimbotCircleEnabled = val end)
-mkToggle(aimSection, "Wall Check", false, function(val) wallCheckEnabled = val end)
-mkSlider(aimSection, "Circle Size", 10, 500, 50, function(val) circleRadius = val end)
-mkSlider(aimSection, "Smooth", 1, 100, 50, function(val) smoothness = val end)
-mkSlider(aimSection, "Prediction", 0, 100, 0, function(val) prediction = val / 1000 end)
-mkDropdown(aimSection, "Target Part", {"Head", "Torso", "HumanoidRootPart"}, "Head", function(val) targetPart = val end)
 
+-- Левая колонка: Основные настройки
+local mainSection = mkSection(CL, "Aimbot", 1)
+mkToggle(mainSection, "Enable", false, function(val) aimbotEnabled = val; if not val then lockTarget = nil end end)
+mkToggle(mainSection, "Show FOV Circle", false, function(val) aimbotCircleEnabled = val end)
+mkSlider(mainSection, "FOV Radius", 10, 500, 50, function(val) circleRadius = val end)
+mkDropdown(mainSection, "Aim Mode", {"Instant", "Smooth"}, "Smooth", function(val) aimMode = val end)
+mkSlider(mainSection, "Smoothness", 1, 100, 50, function(val) smoothness = val end)
+
+-- Правая колонка: Дополнительные настройки
+local extraSection = mkSection(CR, "Targeting", 1)
+mkDropdown(extraSection, "Target Part", {"Head", "Torso", "HumanoidRootPart"}, "Head", function(val) targetPart = val end)
+mkToggle(extraSection, "Wall Check", false, function(val) wallCheckEnabled = val end)
+mkToggle(extraSection, "Visible Check", false, function(val) visibleCheckEnabled = val end)
+mkSlider(extraSection, "Prediction", 0, 100, 0, function(val) prediction = val / 1000 end)
+
+local colorSection = mkSection(CR, "Appearance", 2)
+mkColorPicker(colorSection, "FOV Color", circleColor, function(val) circleColor = val end)
+
+-- Mobile Controls (если нужно)
 if isMobile() then
     local mobileSection = mkSection(CL, "Mobile Controls", 2)
     mkToggle(mobileSection, "Aim Button", false, function(val)
@@ -1097,7 +1106,12 @@ if isMobile() then
         if val then
             if snowButtonObj then snowButtonObj:Destroy() end
             local btnGui = CG:FindFirstChild("SinyxWareMobileButtons")
-            if not btnGui then btnGui = Instance.new("ScreenGui"); btnGui.Name = "SinyxWareMobileButtons"; btnGui.ResetOnSpawn = false; btnGui.Parent = CG end
+            if not btnGui then
+                btnGui = Instance.new("ScreenGui")
+                btnGui.Name = "SinyxWareMobileButtons"
+                btnGui.ResetOnSpawn = false
+                btnGui.Parent = CG
+            end
             snowButtonObj = Instance.new("ImageButton")
             snowButtonObj.Size = UDim2.new(0,55,0,55)
             snowButtonObj.Position = UDim2.new(0.1,0,0.5,-27)
@@ -1146,21 +1160,24 @@ if isMobile() then
     end)
 end
 
+-- ================================================================
+--  VISUALS
+-- ================================================================
 local VL, VR = createTab("Visuals")
-local espSection = mkSection(VL, "ESP Settings", 1)
+local espSection = mkSection(VL, "ESP", 1)
 mkToggle(espSection, "Enable ESP", false, function(val)
     espEnabled = val and hasDrawing
     if val and hasDrawing then
-        for _, player in ipairs(Players:GetPlayers()) do if player ~= LP then createESP(player) end end
+        for _,p in ipairs(Players:GetPlayers()) do if p ~= LP then createESP(p) end end
     end
 end)
-mkToggle(espSection, "Show Boxes", true, function(val) espShowBox = val end)
-mkToggle(espSection, "Show Names", true, function(val) espShowName = val end)
-mkToggle(espSection, "Show HP", true, function(val) espShowHP = val end)
-mkToggle(espSection, "Show Distance", true, function(val) espShowDist = val end)
-mkToggle(espSection, "Show Tracers", true, function(val) espShowTracer = val end)
+mkToggle(espSection, "Boxes", true, function(val) espShowBox = val end)
+mkToggle(espSection, "Names", true, function(val) espShowName = val end)
+mkToggle(espSection, "HP Bar", true, function(val) espShowHP = val end)
+mkToggle(espSection, "Distance", true, function(val) espShowDist = val end)
+mkToggle(espSection, "Tracers", true, function(val) espShowTracer = val end)
 
-local visualSection = mkSection(VR, "Visual Effects", 1)
+local visualSection = mkSection(VR, "Effects", 1)
 mkToggle(visualSection, "Player Aura", false, function(val) auraEnabled = val; if val then setupAura() else removeAura() end end)
 mkToggle(visualSection, "Pink Skybox", false, function(val) skyboxEnabled = val; if val then applySkybox() else removeSkybox() end end)
 mkToggle(visualSection, "Custom Fog", false, function(val) fogEnabled = val; if val then applyFog() else removeFog() end end)
@@ -1170,26 +1187,50 @@ mkSlider(visualSection, "Pulse Size", 1, 30, 5, function(val) pulseSize = val; u
 mkToggle(visualSection, "Particles", false, function(val) particlesEnabled = val end)
 mkSlider(visualSection, "Spawn Multiplier", 1, 10, 5, function(val) particleMultiplier = val end)
 
+-- ================================================================
+--  MISC
+-- ================================================================
 local ML, MR = createTab("Misc")
 local moveSection = mkSection(ML, "Movement", 1)
-mkToggle(moveSection, "Speed Hack", false, function(val) speedHackEnabled = val; local char=LP.Character; if char and char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed = val and speedValue or originalWalkSpeed end end)
-mkSlider(moveSection, "Speed Value", 8, 250, 50, function(val) speedValue = val; if speedHackEnabled then local char=LP.Character; if char and char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed = val end end end)
+mkToggle(moveSection, "Speed Hack", false, function(val)
+    speedHackEnabled = val
+    local c = LP.Character
+    if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = val and speedValue or originalWalkSpeed end
+end)
+mkSlider(moveSection, "Speed Value", 8, 250, 50, function(val)
+    speedValue = val
+    if speedHackEnabled then
+        local c = LP.Character
+        if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = val end
+    end
+end)
 mkToggle(moveSection, "Infinite Jump", false, function(val)
     infJumpEnabled = val
     if val then
-        local char = LP.Character
-        if char and char:FindFirstChild("Humanoid") then
-            originalJumpPower = char.Humanoid.JumpPower
-            char.Humanoid.JumpPower = 9999
-            char.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+        local c = LP.Character
+        if c and c:FindFirstChild("Humanoid") then
+            originalJumpPower = c.Humanoid.JumpPower
+            c.Humanoid.JumpPower = 9999
+            c.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
         end
     else
-        local char = LP.Character
-        if char and char:FindFirstChild("Humanoid") then char.Humanoid.JumpPower = originalJumpPower end
+        local c = LP.Character
+        if c and c:FindFirstChild("Humanoid") then c.Humanoid.JumpPower = originalJumpPower end
     end
 end)
-mkToggle(moveSection, "No Clip", false, function(val) noClipEnabled = val; local char=LP.Character; if char then for _, part in ipairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = not val end end end end)
+mkToggle(moveSection, "No Clip", false, function(val)
+    noClipEnabled = val
+    local c = LP.Character
+    if c then
+        for _,part in ipairs(c:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = not val end
+        end
+    end
+end)
 
+-- ================================================================
+--  CONFIG
+-- ================================================================
 local KL, KR = createTab("Config")
 local configSection = mkSection(KL, "Config Management", 1)
 local configFrame = Instance.new("Frame", configSection)
@@ -1238,8 +1279,8 @@ end
 local listScrolling
 local function updateConfigList()
     if not listScrolling then return end
-    for _, child in ipairs(listScrolling:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
-    for _, name in ipairs(getConfigList()) do
+    for _,child in ipairs(listScrolling:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+    for _,name in ipairs(getConfigList()) do
         local btn = Instance.new("TextButton", listScrolling)
         btn.Size = UDim2.new(1,0,0,16)
         btn.BackgroundColor3 = C.panel
@@ -1355,10 +1396,10 @@ function createESP(player)
 end
 
 Players.PlayerAdded:Connect(function(player) if espEnabled and hasDrawing then createESP(player) end end)
-for _, player in ipairs(Players:GetPlayers()) do if espEnabled and hasDrawing and player ~= LP then createESP(player) end end
+for _,player in ipairs(Players:GetPlayers()) do if espEnabled and hasDrawing and player ~= LP then createESP(player) end end
 
 -- ================================================================
---  АИМБОТ ЛОГИКА
+--  АИМБОТ ЛОГИКА (с поддержкой Visible Check)
 -- ================================================================
 local function getTargetPart(character)
     if targetPart == "Head" then return character:FindFirstChild("Head")
@@ -1378,19 +1419,25 @@ local function wallCheck(targetPos)
     return result == nil
 end
 
+local function visibleCheck(targetCharacter)
+    if not visibleCheckEnabled then return true end
+    return checkVisibility(targetCharacter)
+end
+
 local aimbotCircle = nil
 RunService.RenderStepped:Connect(function()
     if aimbotCircleEnabled and visible and hasDrawing then
         if not aimbotCircle then
             aimbotCircle = Drawing.new("Circle")
             aimbotCircle.Thickness = 2
-            aimbotCircle.Color = Color3.fromRGB(220, 50, 100)
+            aimbotCircle.Color = circleColor
             aimbotCircle.Transparency = 1
             aimbotCircle.Filled = false
             aimbotCircle.NumSides = 60
         end
         aimbotCircle.Radius = circleRadius
         aimbotCircle.Position = Camera.ViewportSize / 2
+        aimbotCircle.Color = circleColor
         aimbotCircle.Visible = true
     else
         if aimbotCircle then aimbotCircle.Visible = false end
@@ -1403,7 +1450,11 @@ RunService.RenderStepped:Connect(function()
     local closestPart = nil
     if lockButtonEnabled and lockTarget and lockTarget.Parent then
         local pos, onScreen = Camera:WorldToViewportPoint(lockTarget.Position)
-        if onScreen and wallCheck(lockTarget.Position) then closestPart = lockTarget else lockTarget = nil end
+        if onScreen and wallCheck(lockTarget.Position) and visibleCheck(lockTarget.Parent) then
+            closestPart = lockTarget
+        else
+            lockTarget = nil
+        end
     end
     if not closestPart then
         for _, player in ipairs(Players:GetPlayers()) do
@@ -1416,7 +1467,7 @@ RunService.RenderStepped:Connect(function()
                         local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
                         if onScreen then
                             local dist = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
-                            if dist < closestDist and dist < circleRadius and wallCheck(part.Position) then
+                            if dist < closestDist and dist < circleRadius and wallCheck(part.Position) and visibleCheck(char) then
                                 closestDist = dist; closestPart = part
                             end
                         end
@@ -1432,6 +1483,7 @@ RunService.RenderStepped:Connect(function()
             targetPos = targetPos + vel * prediction
         end
         local smoothFactor = smoothness / 100
+        if aimMode == "Instant" then smoothFactor = 1 end
         if isMobile() then
             local lookCF = CFrame.new(Camera.CFrame.Position, targetPos)
             local alpha = math.clamp(smoothFactor * 0.4, 0.05, 1.0)
@@ -1456,13 +1508,38 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================================
+--  ФУНКЦИОНАЛЬНЫЙ ПОИСК
+-- ================================================================
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local query = SearchBox.Text:lower()
+    for _, f in pairs(TabContents) do
+        if f.Visible then
+            local allElements = {}
+            for _,child in ipairs(f:GetDescendants()) do
+                if child:IsA("TextLabel") or child:IsA("TextButton") then
+                    local text = child.Text:lower()
+                    if text and text ~= "" then
+                        allElements[child] = true
+                    end
+                end
+            end
+            for child,_ in pairs(allElements) do
+                local text = child.Text:lower()
+                local show = query == "" or text:find(query, 1, true)
+                child.Visible = show
+            end
+        end
+    end
+end)
+
+-- ================================================================
 --  MISC ЛОГИКА (Inf Jump)
 -- ================================================================
 LP.CharacterAdded:Connect(function(char)
     task.wait(0.5)
     if speedHackEnabled then local h = char:FindFirstChild("Humanoid"); if h then h.WalkSpeed = speedValue end end
     if infJumpEnabled then local h = char:FindFirstChild("Humanoid"); if h then h.JumpPower = 9999; h:SetStateEnabled(Enum.HumanoidStateType.Jumping, true) end end
-    if noClipEnabled then for _, part in ipairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end end
+    if noClipEnabled then for _,part in ipairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end end
     if auraEnabled then setupAura() end
 end)
 
@@ -1487,7 +1564,7 @@ RunService.RenderStepped:Connect(function()
     if noClipEnabled then
         local char = LP.Character
         if char then
-            for _, part in ipairs(char:GetDescendants()) do
+            for _,part in ipairs(char:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
         end
@@ -1547,6 +1624,7 @@ UIS.InputBegan:Connect(function(i, gpe)
 end)
 
 setTab("Home")
-print("[SinyxWare v12] ✓ Loaded | Insert = скрыть/показать GUI")
-print("[SinyxWare v12] ✓ Ресайз хэндл работает (тяни за угол)")
-print("[SinyxWare v12] ✓ Все функции на месте")
+print("[SinyxWare v13] ✓ Loaded | Insert = скрыть/показать")
+print("[SinyxWare v13] ✓ Поиск работает (фильтрует элементы)")
+print("[SinyxWare v13] ✓ Combat полностью переработан")
+print("[SinyxWare v13] ✓ Ресайз хэндл исправлен")
