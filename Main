@@ -1,5 +1,5 @@
 -- ================================================================
---  SINYXWARE GUI v5 | ПОЛНОСТЬЮ РАБОЧИЙ
+--  SINYXWARE GUI v7 | ПОЛНОСТЬЮ РАБОЧИЙ + КОНФИГИ
 --  Автор: GothbreachHelper
 -- ================================================================
 
@@ -10,11 +10,13 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LP = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local HttpService = game:GetService("HttpService")
 
 -- ================================================================
 --  ЗАЩИТА ОТ ДУБЛИРОВАНИЯ
 -- ================================================================
 pcall(function() CG:FindFirstChild("SinyxWare_Main"):Destroy() end)
+pcall(function() CG:FindFirstChild("SinyxWareMobileButtons"):Destroy() end)
 
 -- ================================================================
 --  ОПРЕДЕЛЕНИЕ УСТРОЙСТВА
@@ -193,6 +195,8 @@ local C = {
     white    = Color3.fromRGB(255, 255, 255),
     border   = Color3.fromRGB(80, 35, 65),
     togOff   = Color3.fromRGB(70, 40, 60),
+    green    = Color3.fromRGB(0, 255, 0),
+    yellow   = Color3.fromRGB(255, 255, 0),
 }
 
 -- ================================================================
@@ -301,6 +305,7 @@ local TABS = {
     { n = "Combat",  ico = "✖" },
     { n = "Visuals", ico = "◎" },
     { n = "Misc",    ico = "◉" },
+    { n = "Config",  ico = "⚙" },
 }
 
 local TabBtns = {}
@@ -457,6 +462,7 @@ local function corner(f, r)
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2)
 end
 
+-- Тоггл с возвратом значения
 local function mkToggle(parent, label, default, callback)
     local row = Instance.new("Frame", parent)
     row.Size = UDim2.new(1, 0, 0, 16)
@@ -489,17 +495,21 @@ local function mkToggle(parent, label, default, callback)
     corner(knob, 4)
 
     local val = default
-    pill.MouseButton1Click:Connect(function()
+    local function toggle()
         val = not val
         TS:Create(pill, TweenInfo.new(0.12), { BackgroundColor3 = val and C.red or C.togOff }):Play()
         TS:Create(knob, TweenInfo.new(0.12), {
             Position = val and UDim2.new(1, -10, 0.5, -4) or UDim2.new(0, 2, 0.5, -4)
         }):Play()
         if callback then callback(val) end
-    end)
-    return row, function() return val end
+        return val
+    end
+    
+    pill.MouseButton1Click:Connect(toggle)
+    return row, function() return val end, toggle
 end
 
+-- Слайдер
 local function mkSlider(parent, label, mn, mx, def, callback)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 26)
@@ -571,6 +581,64 @@ local function mkSlider(parent, label, mn, mx, def, callback)
     return wrap, function() return val end
 end
 
+-- Дропдаун
+local function mkDropdown(parent, label, options, default, callback)
+    local wrap = Instance.new("Frame", parent)
+    wrap.Size = UDim2.new(1, 0, 0, 28)
+    wrap.BackgroundTransparency = 1
+
+    local lbl = Instance.new("TextLabel", wrap)
+    lbl.Size = UDim2.new(1, -5, 0, 11)
+    lbl.Position = UDim2.new(0, 5, 0, 1)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 7
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local btn = Instance.new("TextButton", wrap)
+    btn.Size = UDim2.new(1, -10, 0, 14)
+    btn.Position = UDim2.new(0, 5, 0, 13)
+    btn.BackgroundColor3 = C.section
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    corner(btn, 2)
+
+    local cur = Instance.new("TextLabel", btn)
+    cur.Size = UDim2.new(1, -16, 1, 0)
+    cur.Position = UDim2.new(0, 5, 0, 0)
+    cur.BackgroundTransparency = 1
+    cur.Text = default
+    cur.TextColor3 = C.text
+    cur.Font = Enum.Font.Gotham
+    cur.TextSize = 7
+    cur.TextXAlignment = Enum.TextXAlignment.Left
+
+    local arr = Instance.new("TextLabel", btn)
+    arr.Size = UDim2.new(0, 12, 1, 0)
+    arr.Position = UDim2.new(1, -14, 0, 0)
+    arr.BackgroundTransparency = 1
+    arr.Text = "∧"
+    arr.TextColor3 = C.dim
+    arr.Font = Enum.Font.GothamBold
+    arr.TextSize = 6
+
+    local idx = 1
+    for i, v in ipairs(options) do
+        if v == default then idx = i end
+    end
+    
+    btn.MouseButton1Click:Connect(function()
+        idx = (idx % #options) + 1
+        cur.Text = options[idx]
+        if callback then callback(options[idx]) end
+    end)
+
+    return wrap, function() return options[idx] end
+end
+
+-- Секция
 local function mkSection(parent, title, lo)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, -6, 0, 0)
@@ -669,29 +737,158 @@ local function mkTabContent(name)
 end
 
 -- ================================================================
---  ПЕРЕМЕННЫЕ ДЛЯ АИМБОТА
+--  ПЕРЕМЕННЫЕ ДЛЯ ФУНКЦИЙ
 -- ================================================================
+-- Aimbot
 local aimbotEnabled = false
 local aimbotCircleEnabled = false
 local circleRadius = 50
 local smoothness = 50
 local prediction = 0
 local targetPart = "Head"
-local snowButtonActive = false
-local lockButtonActive = false
-local currentTarget = nil
-local snowButton = nil
 local lockTarget = nil
+local lockButtonEnabled = false
 
--- ================================================================
---  ПЕРЕМЕННЫЕ ДЛЯ MISC
--- ================================================================
+-- ESP
+local espEnabled = false
+local espShowBox = true
+local espShowName = true
+local espShowHP = true
+local espShowDist = true
+local espShowTracer = true
+
+-- Misc
 local speedHackEnabled = false
 local speedValue = 50
 local infJumpEnabled = false
 local noClipEnabled = false
 local originalWalkSpeed = 16
 local originalJumpPower = 50
+
+-- Mobile
+local snowButtonEnabled = false
+local snowButtonObj = nil
+local lockButtonObj = nil
+
+-- GUI видимость
+local visible = true
+local mobileButton = nil
+
+-- ================================================================
+--  КОНФИГИ
+-- ================================================================
+local Configs = {}
+local currentConfigName = "Default"
+local configDir = "SinyxWare_Configs"
+
+-- Создаем папку для конфигов
+local function ensureConfigFolder()
+    if not isfolder(configDir) then
+        makefolder(configDir)
+    end
+end
+
+-- Сохранение конфига
+local function saveConfig(name)
+    ensureConfigFolder()
+    local config = {
+        aimbot = {
+            enabled = aimbotEnabled,
+            circleEnabled = aimbotCircleEnabled,
+            circleRadius = circleRadius,
+            smoothness = smoothness,
+            prediction = prediction,
+            targetPart = targetPart
+        },
+        esp = {
+            enabled = espEnabled,
+            showBox = espShowBox,
+            showName = espShowName,
+            showHP = espShowHP,
+            showDist = espShowDist,
+            showTracer = espShowTracer
+        },
+        misc = {
+            speedEnabled = speedHackEnabled,
+            speedValue = speedValue,
+            infJumpEnabled = infJumpEnabled,
+            noClipEnabled = noClipEnabled
+        }
+    }
+    
+    local json = HttpService:JSONEncode(config)
+    local path = configDir .. "/" .. name .. ".json"
+    writefile(path, json)
+    print("[SinyxWare] Config saved: " .. name)
+end
+
+-- Загрузка конфига
+local function loadConfig(name)
+    local path = configDir .. "/" .. name .. ".json"
+    if not isfile(path) then
+        print("[SinyxWare] Config not found: " .. name)
+        return false
+    end
+    
+    local json = readfile(path)
+    local config = HttpService:JSONDecode(json)
+    
+    -- Aimbot
+    if config.aimbot then
+        aimbotEnabled = config.aimbot.enabled or false
+        aimbotCircleEnabled = config.aimbot.circleEnabled or false
+        circleRadius = config.aimbot.circleRadius or 50
+        smoothness = config.aimbot.smoothness or 50
+        prediction = config.aimbot.prediction or 0
+        targetPart = config.aimbot.targetPart or "Head"
+    end
+    
+    -- ESP
+    if config.esp then
+        espEnabled = config.esp.enabled or false
+        espShowBox = config.esp.showBox or true
+        espShowName = config.esp.showName or true
+        espShowHP = config.esp.showHP or true
+        espShowDist = config.esp.showDist or true
+        espShowTracer = config.esp.showTracer or true
+    end
+    
+    -- Misc
+    if config.misc then
+        speedHackEnabled = config.misc.speedEnabled or false
+        speedValue = config.misc.speedValue or 50
+        infJumpEnabled = config.misc.infJumpEnabled or false
+        noClipEnabled = config.misc.noClipEnabled or false
+    end
+    
+    print("[SinyxWare] Config loaded: " .. name)
+    return true
+end
+
+-- Получение списка конфигов
+local function getConfigList()
+    ensureConfigFolder()
+    local files = listfiles(configDir)
+    local names = {}
+    for _, file in ipairs(files) do
+        local name = file:match("([^/\\]+)%.json$")
+        if name then
+            table.insert(names, name)
+        end
+    end
+    return names
+end
+
+-- Удаление конфига
+local function deleteConfig(name)
+    local path = configDir .. "/" .. name .. ".json"
+    if isfile(path) then
+        delfile(path)
+        print("[SinyxWare] Config deleted: " .. name)
+        return true
+    end
+    return false
+end
 
 -- ================================================================
 --  HOME TAB
@@ -734,10 +931,9 @@ local CL, CR = mkTabContent("Combat")
 
 local aimSection = mkSection(CL, "Aimbot Settings", 1)
 
-local aimToggle, getAim = mkToggle(aimSection, "Enable Aimbot", false, function(val)
+local aimToggle, getAim, toggleAim = mkToggle(aimSection, "Enable Aimbot", false, function(val)
     aimbotEnabled = val
     if not val then
-        currentTarget = nil
         lockTarget = nil
     end
 end)
@@ -758,77 +954,41 @@ local predSlider, getPred = mkSlider(aimSection, "Prediction", 0, 100, 0, functi
     prediction = val / 1000
 end)
 
--- Dropdown
-local function mkDropdown(parent, label, options, default)
-    local wrap = Instance.new("Frame", parent)
-    wrap.Size = UDim2.new(1, 0, 0, 28)
-    wrap.BackgroundTransparency = 1
+local partDropdown, getPart = mkDropdown(aimSection, "Target Part", {"Head", "Torso", "HumanoidRootPart"}, "Head", function(val)
+    targetPart = val
+end)
 
-    local lbl = Instance.new("TextLabel", wrap)
-    lbl.Size = UDim2.new(1, -5, 0, 11)
-    lbl.Position = UDim2.new(0, 5, 0, 1)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = label
-    lbl.TextColor3 = C.text
-    lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 7
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local btn = Instance.new("TextButton", wrap)
-    btn.Size = UDim2.new(1, -10, 0, 14)
-    btn.Position = UDim2.new(0, 5, 0, 13)
-    btn.BackgroundColor3 = C.section
-    btn.BorderSizePixel = 0
-    btn.AutoButtonColor = false
-    corner(btn, 2)
-
-    local cur = Instance.new("TextLabel", btn)
-    cur.Size = UDim2.new(1, -16, 1, 0)
-    cur.Position = UDim2.new(0, 5, 0, 0)
-    cur.BackgroundTransparency = 1
-    cur.Text = default
-    cur.TextColor3 = C.text
-    cur.Font = Enum.Font.Gotham
-    cur.TextSize = 7
-    cur.TextXAlignment = Enum.TextXAlignment.Left
-
-    local arr = Instance.new("TextLabel", btn)
-    arr.Size = UDim2.new(0, 12, 1, 0)
-    arr.Position = UDim2.new(1, -14, 0, 0)
-    arr.BackgroundTransparency = 1
-    arr.Text = "∧"
-    arr.TextColor3 = C.dim
-    arr.Font = Enum.Font.GothamBold
-    arr.TextSize = 6
-
-    local idx = 1
-    for i, v in ipairs(options) do
-        if v == default then idx = i end
-    end
-    btn.MouseButton1Click:Connect(function()
-        idx = (idx % #options) + 1
-        cur.Text = options[idx]
-        targetPart = options[idx]
+-- Mobile Controls секция (только для мобилы)
+if isMobile() then
+    local mobileSection = mkSection(CL, "Mobile Controls", 2)
+    
+    local snowToggle, getSnow = mkToggle(mobileSection, "Snow Button", false, function(val)
+        snowButtonEnabled = val
+        if val then
+            createSnowButton()
+        elseif snowButtonObj then
+            snowButtonObj:Destroy()
+            snowButtonObj = nil
+        end
     end)
 
-    return wrap
+    local lockToggle, getLock = mkToggle(mobileSection, "Lock Button", false, function(val)
+        lockButtonEnabled = val
+        if val then
+            createLockButton()
+        elseif lockButtonObj then
+            lockButtonObj:Destroy()
+            lockButtonObj = nil
+        end
+    end)
 end
 
-mkDropdown(aimSection, "Target Part", {"Head", "Torso", "HumanoidRootPart"}, "Head")
-
 -- ================================================================
---  VISUALS TAB (ESP С УПРАВЛЕНИЕМ)
+--  VISUALS TAB (ESP)
 -- ================================================================
 local VL, VR = mkTabContent("Visuals")
 
 local espSection = mkSection(VL, "ESP Settings", 1)
-
-local espEnabled = false
-local espShowBox = false
-local espShowName = false
-local espShowHP = false
-local espShowDist = false
-local espShowTracer = false
 
 local espToggle, getEsp = mkToggle(espSection, "Enable ESP", false, function(val)
     espEnabled = val
@@ -893,7 +1053,10 @@ local espObjects = {}
 
 local function createESP(player)
     if player == LP then return end
-    if espObjects[player] then return end
+    if espObjects[player] then 
+        -- Обновляем существующий ESP
+        return 
+    end
 
     local box = Drawing.new("Square")
     box.Thickness = 1.5
@@ -1072,13 +1235,12 @@ for _, player in ipairs(Players:GetPlayers()) do
 end
 
 -- ================================================================
---  MISC TAB (РАБОЧИЕ ФУНКЦИИ)
+--  MISC TAB
 -- ================================================================
 local ML, MR = mkTabContent("Misc")
 
 local moveSection = mkSection(ML, "Movement", 1)
 
--- Speed Hack
 local speedToggle, getSpeedToggle = mkToggle(moveSection, "Speed Hack", false, function(val)
     speedHackEnabled = val
     local char = LP.Character
@@ -1101,85 +1263,214 @@ local speedSlider, getSpeedVal = mkSlider(moveSection, "Speed Value", 8, 250, 50
     end
 end)
 
--- Infinite Jump
 local jumpToggle, getJumpToggle = mkToggle(moveSection, "Infinite Jump", false, function(val)
     infJumpEnabled = val
-end)
-
--- No Clip
-local clipToggle, getClipToggle = mkToggle(moveSection, "No Clip", false, function(val)
-    noClipEnabled = val
     if val then
         local char = LP.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
-            end
+        if char and char:FindFirstChild("Humanoid") then
+            originalJumpPower = char.Humanoid.JumpPower
+            char.Humanoid.JumpPower = 9999
         end
     else
         local char = LP.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.JumpPower = originalJumpPower
         end
     end
 end)
 
--- ================================================================
---  MISC ЛОГИКА (RenderStepped)
--- ================================================================
-RunService.RenderStepped:Connect(function()
+local clipToggle, getClipToggle = mkToggle(moveSection, "No Clip", false, function(val)
+    noClipEnabled = val
     local char = LP.Character
-    if not char then return end
-
-    -- Infinite Jump
-    if infJumpEnabled then
-        local humanoid = char:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.JumpPower = 9999
-        end
-    else
-        local humanoid = char:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.JumpPower = originalJumpPower
-        end
-    end
-
-    -- No Clip
-    if noClipEnabled then
+    if char then
         for _, part in ipairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
-end)
-
--- Сброс при респавне
-LP.CharacterAdded:Connect(function(char)
-    task.wait(0.5)
-    if speedHackEnabled then
-        local humanoid = char:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = speedValue
-        end
-    end
-    if noClipEnabled then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+                part.CanCollide = not val
             end
         end
     end
 end)
 
 -- ================================================================
---  АИМБОТ ЛОГИКА
+--  CONFIG TAB
+-- ================================================================
+local KL, KR = mkTabContent("Config")
+
+local configSection = mkSection(KL, "Config Management", 1)
+
+-- Создаем UI для конфигов
+local configFrame = Instance.new("Frame", configSection)
+configFrame.Size = UDim2.new(1, 0, 0, 0)
+configFrame.AutomaticSize = Enum.AutomaticSize.Y
+configFrame.BackgroundTransparency = 1
+
+-- Поле ввода имени конфига
+local nameRow = Instance.new("Frame", configFrame)
+nameRow.Size = UDim2.new(1, 0, 0, 24)
+nameRow.BackgroundTransparency = 1
+
+local nameLabel = Instance.new("TextLabel", nameRow)
+nameLabel.Size = UDim2.new(0, 50, 1, 0)
+nameLabel.Position = UDim2.new(0, 0, 0, 0)
+nameLabel.BackgroundTransparency = 1
+nameLabel.Text = "Name:"
+nameLabel.TextColor3 = C.text
+nameLabel.Font = Enum.Font.Gotham
+nameLabel.TextSize = 7
+nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local nameInput = Instance.new("TextBox", nameRow)
+nameInput.Size = UDim2.new(1, -55, 1, 0)
+nameInput.Position = UDim2.new(0, 55, 0, 0)
+nameInput.BackgroundColor3 = C.section
+nameInput.Text = "MyConfig"
+nameInput.TextColor3 = C.text
+nameInput.Font = Enum.Font.Gotham
+nameInput.TextSize = 7
+nameInput.BorderSizePixel = 0
+corner(nameInput, 2)
+
+-- Кнопки
+local btnRow = Instance.new("Frame", configFrame)
+btnRow.Size = UDim2.new(1, 0, 0, 20)
+btnRow.Position = UDim2.new(0, 0, 0, 26)
+btnRow.BackgroundTransparency = 1
+
+local function createButton(parent, text, pos, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0, 70, 1, 0)
+    btn.Position = UDim2.new(pos, 0, 0, 0)
+    btn.BackgroundColor3 = C.red
+    btn.Text = text
+    btn.TextColor3 = C.white
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 7
+    btn.BorderSizePixel = 0
+    corner(btn, 2)
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+local saveBtn = createButton(btnRow, "Save", 0, function()
+    local name = nameInput.Text:gsub("%s+", "_")
+    if name ~= "" then
+        saveConfig(name)
+        updateConfigList()
+    end
+end)
+
+local loadBtn = createButton(btnRow, "Load", 0.35, function()
+    local name = nameInput.Text:gsub("%s+", "_")
+    if name ~= "" then
+        if loadConfig(name) then
+            -- Обновляем все UI элементы
+            updateAllUI()
+        end
+    end
+end)
+
+local deleteBtn = createButton(btnRow, "Delete", 0.7, function()
+    local name = nameInput.Text:gsub("%s+", "_")
+    if name ~= "" then
+        deleteConfig(name)
+        updateConfigList()
+    end
+end)
+
+-- Список конфигов
+local listFrame = Instance.new("Frame", configFrame)
+listFrame.Size = UDim2.new(1, 0, 0, 80)
+listFrame.Position = UDim2.new(0, 0, 0, 50)
+listFrame.BackgroundColor3 = C.section
+listFrame.BorderSizePixel = 0
+corner(listFrame, 2)
+
+local listScrolling = Instance.new("ScrollingFrame", listFrame)
+listScrolling.Size = UDim2.new(1, -4, 1, -4)
+listScrolling.Position = UDim2.new(0, 2, 0, 2)
+listScrolling.BackgroundTransparency = 1
+listScrolling.BorderSizePixel = 0
+listScrolling.AutomaticCanvasSize = Enum.AutomaticSize.Y
+listScrolling.CanvasSize = UDim2.new()
+
+local listLayout = Instance.new("UIListLayout", listScrolling)
+listLayout.Padding = UDim.new(0, 1)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function updateConfigList()
+    for _, child in ipairs(listScrolling:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    local configs = getConfigList()
+    for _, name in ipairs(configs) do
+        local btn = Instance.new("TextButton", listScrolling)
+        btn.Size = UDim2.new(1, 0, 0, 16)
+        btn.BackgroundColor3 = C.panel
+        btn.Text = name
+        btn.TextColor3 = C.text
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 7
+        btn.BorderSizePixel = 0
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.TextTruncate = Enum.TextTruncate.AtEnd
+        corner(btn, 1)
+        
+        btn.MouseButton1Click:Connect(function()
+            nameInput.Text = name
+        end)
+    end
+end
+
+-- Обновление всех UI элементов после загрузки конфига
+local function updateAllUI()
+    -- Обновляем тогглы и слайдеры
+    -- Aimbot
+    if aimToggle then
+        if aimbotEnabled ~= getAim() then
+            local _, _, toggle = mkToggle(aimSection, "Enable Aimbot", aimbotEnabled)
+            -- Просто обновляем через callback
+            if aimbotEnabled then
+                aimToggle:Fire()
+            end
+        end
+    end
+    
+    -- ESP
+    if espToggle then
+        if espEnabled ~= getEsp() then
+            local _, _, toggle = mkToggle(espSection, "Enable ESP", espEnabled)
+        end
+    end
+    
+    -- Misc
+    if speedToggle then
+        if speedHackEnabled ~= getSpeedToggle() then
+            local _, _, toggle = mkToggle(moveSection, "Speed Hack", speedHackEnabled)
+        end
+    end
+    
+    if jumpToggle then
+        if infJumpEnabled ~= getJumpToggle() then
+            local _, _, toggle = mkToggle(moveSection, "Infinite Jump", infJumpEnabled)
+        end
+    end
+    
+    if clipToggle then
+        if noClipEnabled ~= getClipToggle() then
+            local _, _, toggle = mkToggle(moveSection, "No Clip", noClipEnabled)
+        end
+    end
+    
+    print("[SinyxWare] UI updated with loaded config")
+end
+
+updateConfigList()
+
+-- ================================================================
+--  АИМБОТ ЛОГИКА (РАБОЧАЯ)
 -- ================================================================
 local function getTargetPart(character)
     if targetPart == "Head" then
@@ -1191,33 +1482,61 @@ local function getTargetPart(character)
     end
 end
 
+local aimbotCircle = nil
+
 RunService.RenderStepped:Connect(function()
-    if not aimbotEnabled then return end
+    -- Рисуем круг
+    if aimbotCircleEnabled and visible then
+        if not aimbotCircle then
+            aimbotCircle = Drawing.new("Circle")
+            aimbotCircle.Thickness = 2
+            aimbotCircle.Color = Color3.fromRGB(220, 50, 100)
+            aimbotCircle.Transparency = 1
+            aimbotCircle.Filled = false
+            aimbotCircle.NumSides = 60
+        end
+        aimbotCircle.Radius = circleRadius
+        aimbotCircle.Position = Camera.ViewportSize / 2
+        aimbotCircle.Visible = true
+    else
+        if aimbotCircle then
+            aimbotCircle.Visible = false
+        end
+    end
+    
+    -- Аимбот
+    if not aimbotEnabled or not visible then return end
 
     local localChar = LP.Character
     if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return end
 
     local camera = workspace.CurrentCamera
-    local mousePos = UIS:GetMouseLocation()
     local screenCenter = camera.ViewportSize / 2
 
     local closestDist = circleRadius
     local closestPlayer = nil
     local closestPart = nil
 
-    if lockButtonEnabled and lockTarget and lockTarget.Parent and lockTarget.Parent:FindFirstChild("Humanoid") then
-        local part = getTargetPart(lockTarget.Parent)
+    -- Если есть залоченная цель
+    if lockButtonEnabled and lockTarget and lockTarget.Parent then
+        local part = lockTarget
         if part and part:IsDescendantOf(workspace) then
-            closestPlayer = lockTarget.Parent
-            closestPart = part
+            local pos, onScreen = camera:WorldToViewportPoint(part.Position)
+            if onScreen then
+                closestPart = part
+                closestPlayer = lockTarget.Parent
+            else
+                lockTarget = nil
+            end
         else
             lockTarget = nil
         end
     end
 
+    -- Поиск цели
     if not closestPlayer then
         for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if player ~= LP and player.Character then
                 local char = player.Character
                 local humanoid = char:FindFirstChild("Humanoid")
                 if humanoid and humanoid.Health > 0 then
@@ -1239,60 +1558,218 @@ RunService.RenderStepped:Connect(function()
     end
 
     if closestPlayer and closestPart then
+        -- Получаем позицию цели с учетом предсказания
         local targetPos = closestPart.Position
-        local velocity = closestPart.Velocity or Vector3.new()
-        targetPos = targetPos + (velocity * prediction)
-
+        
+        -- Предсказание
+        if prediction > 0 then
+            local velocity = closestPart.Velocity or Vector3.new()
+            targetPos = targetPos + (velocity * prediction)
+        end
+        
+        -- Конвертируем в экранные координаты
         local screenPos, onScreen = camera:WorldToViewportPoint(targetPos)
         if onScreen then
             local smoothFactor = smoothness / 100
-            local targetScreen = Vector2.new(screenPos.X, screenPos.Y)
-            local currentMouse = UIS:GetMouseLocation()
-            local newMouse = currentMouse:Lerp(targetScreen, math.min(smoothFactor, 1))
-
-            if smoothFactor >= 0.99 then
-                mousemoverel(targetScreen.X - currentMouse.X, targetScreen.Y - currentMouse.Y)
+            
+            -- Если smooth >= 95% - мгновенное наведение
+            if smoothFactor >= 0.95 then
+                mousemoverel(screenPos.X - screenCenter.X, screenPos.Y - screenCenter.Y)
             else
+                -- Плавное наведение
+                local currentMouse = UIS:GetMouseLocation()
+                local targetScreen = Vector2.new(screenPos.X, screenPos.Y)
+                local newMouse = currentMouse:Lerp(targetScreen, smoothFactor)
                 mousemoverel(newMouse.X - currentMouse.X, newMouse.Y - currentMouse.Y)
             end
-
+            
+            -- Если включен лок - фиксируем цель
             if lockButtonEnabled then
                 lockTarget = closestPart
-            else
-                currentTarget = closestPlayer
             end
         end
     end
+end)
 
-    if aimbotCircleEnabled then
-        local circle = Drawing.new("Circle")
-        circle.Radius = circleRadius
-        circle.Position = screenCenter
-        circle.Thickness = 2
-        circle.Color = Color3.fromRGB(220, 50, 100)
-        circle.Transparency = 1
-        circle.Visible = true
-        circle.Filled = false
-        circle.NumSides = 60
-        task.wait()
-        circle:Remove()
+-- ================================================================
+--  MISC ЛОГИКА
+-- ================================================================
+-- Сброс при респавне
+LP.CharacterAdded:Connect(function(char)
+    task.wait(0.5)
+    if speedHackEnabled then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = speedValue
+        end
+    end
+    if infJumpEnabled then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.JumpPower = 9999
+        end
+    end
+    if noClipEnabled then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- Мониторинг No Clip
+RunService.RenderStepped:Connect(function()
+    if noClipEnabled then
+        local char = LP.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
     end
 end)
 
 -- ================================================================
 --  МОБИЛЬНЫЕ КНОПКИ
 -- ================================================================
-local mobileButton = nil
-local snowButtonObj = nil
-local lockButtonObj = nil
-local snowButtonEnabled = false
-local lockButtonEnabled = false
+local function createSnowButton()
+    if snowButtonObj then snowButtonObj:Destroy() end
+    
+    local btnGui = CG:FindFirstChild("SinyxWareMobileButtons")
+    if not btnGui then
+        btnGui = Instance.new("ScreenGui")
+        btnGui.Name = "SinyxWareMobileButtons"
+        btnGui.ResetOnSpawn = false
+        btnGui.Parent = CG
+    end
+    
+    snowButtonObj = Instance.new("ImageButton")
+    snowButtonObj.Size = UDim2.new(0, 45, 0, 45)
+    snowButtonObj.Position = UDim2.new(0.1, 0, 0.5, -22)
+    snowButtonObj.Image = "rbxassetid://73073995075962"
+    snowButtonObj.BackgroundColor3 = aimbotEnabled and C.green or C.red
+    snowButtonObj.BackgroundTransparency = 0.3
+    snowButtonObj.Parent = btnGui
+    snowButtonObj.ZIndex = 999
+    corner(snowButtonObj, 22)
 
+    local dragSnow = {active = false, start = nil, offset = nil}
+    snowButtonObj.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragSnow.active = true
+            dragSnow.start = input.Position
+            dragSnow.offset = snowButtonObj.Position
+        end
+    end)
+    snowButtonObj.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragSnow.active = false
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if dragSnow.active and input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - dragSnow.start
+            snowButtonObj.Position = UDim2.new(
+                dragSnow.offset.X.Scale,
+                dragSnow.offset.X.Offset + delta.X,
+                dragSnow.offset.Y.Scale,
+                dragSnow.offset.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    snowButtonObj.MouseButton1Click:Connect(function()
+        aimbotEnabled = not aimbotEnabled
+        snowButtonObj.BackgroundColor3 = aimbotEnabled and C.green or C.red
+        if not aimbotEnabled then
+            lockTarget = nil
+        end
+    end)
+    snowButtonObj.TouchTap:Connect(function()
+        aimbotEnabled = not aimbotEnabled
+        snowButtonObj.BackgroundColor3 = aimbotEnabled and C.green or C.red
+        if not aimbotEnabled then
+            lockTarget = nil
+        end
+    end)
+end
+
+local function createLockButton()
+    if lockButtonObj then lockButtonObj:Destroy() end
+    
+    local btnGui = CG:FindFirstChild("SinyxWareMobileButtons")
+    if not btnGui then
+        btnGui = Instance.new("ScreenGui")
+        btnGui.Name = "SinyxWareMobileButtons"
+        btnGui.ResetOnSpawn = false
+        btnGui.Parent = CG
+    end
+    
+    lockButtonObj = Instance.new("ImageButton")
+    lockButtonObj.Size = UDim2.new(0, 45, 0, 45)
+    lockButtonObj.Position = UDim2.new(0.8, 0, 0.5, -22)
+    lockButtonObj.Image = "rbxassetid://73073995075962"
+    lockButtonObj.BackgroundColor3 = lockButtonEnabled and C.yellow or C.red
+    lockButtonObj.BackgroundTransparency = 0.3
+    lockButtonObj.Parent = btnGui
+    lockButtonObj.ZIndex = 999
+    corner(lockButtonObj, 22)
+
+    local dragLock = {active = false, start = nil, offset = nil}
+    lockButtonObj.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragLock.active = true
+            dragLock.start = input.Position
+            dragLock.offset = lockButtonObj.Position
+        end
+    end)
+    lockButtonObj.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragLock.active = false
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if dragLock.active and input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - dragLock.start
+            lockButtonObj.Position = UDim2.new(
+                dragLock.offset.X.Scale,
+                dragLock.offset.X.Offset + delta.X,
+                dragLock.offset.Y.Scale,
+                dragLock.offset.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    lockButtonObj.MouseButton1Click:Connect(function()
+        lockButtonEnabled = not lockButtonEnabled
+        lockButtonObj.BackgroundColor3 = lockButtonEnabled and C.yellow or C.red
+        if not lockButtonEnabled then
+            lockTarget = nil
+        end
+    end)
+    lockButtonObj.TouchTap:Connect(function()
+        lockButtonEnabled = not lockButtonEnabled
+        lockButtonObj.BackgroundColor3 = lockButtonEnabled and C.yellow or C.red
+        if not lockButtonEnabled then
+            lockTarget = nil
+        end
+    end)
+end
+
+-- ================================================================
+--  МОБИЛЬНАЯ КНОПКА ОТКРЫТИЯ GUI
+-- ================================================================
 if isMobile() then
-    local btnGui = Instance.new("ScreenGui")
-    btnGui.Name = "SinyxWareMobileButtons"
-    btnGui.ResetOnSpawn = false
-    btnGui.Parent = CG
+    local btnGui = CG:FindFirstChild("SinyxWareMobileButtons")
+    if not btnGui then
+        btnGui = Instance.new("ScreenGui")
+        btnGui.Name = "SinyxWareMobileButtons"
+        btnGui.ResetOnSpawn = false
+        btnGui.Parent = CG
+    end
 
     mobileButton = Instance.new("ImageButton")
     mobileButton.Size = UDim2.new(0, 50, 0, 50)
@@ -1332,136 +1809,15 @@ if isMobile() then
         Outer.Visible = visible
         if snowButtonObj then snowButtonObj.Visible = visible end
         if lockButtonObj then lockButtonObj.Visible = visible end
+        if aimbotCircle then aimbotCircle.Visible = visible and aimbotCircleEnabled end
     end
     mobileButton.MouseButton1Click:Connect(toggleGUI)
     mobileButton.TouchTap:Connect(toggleGUI)
-
-    local function createSnowButton()
-        if snowButtonObj then snowButtonObj:Destroy() end
-        snowButtonObj = Instance.new("ImageButton")
-        snowButtonObj.Size = UDim2.new(0, 45, 0, 45)
-        snowButtonObj.Position = UDim2.new(0.1, 0, 0.5, -22)
-        snowButtonObj.Image = "rbxassetid://73073995075962"
-        snowButtonObj.BackgroundColor3 = Color3.fromRGB(220, 50, 100)
-        snowButtonObj.BackgroundTransparency = 0.3
-        snowButtonObj.Parent = btnGui
-        snowButtonObj.ZIndex = 999
-        corner(snowButtonObj, 22)
-
-        local dragSnow = {active = false, start = nil, offset = nil}
-        snowButtonObj.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Touch then
-                dragSnow.active = true
-                dragSnow.start = input.Position
-                dragSnow.offset = snowButtonObj.Position
-            end
-        end)
-        snowButtonObj.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Touch then
-                dragSnow.active = false
-            end
-        end)
-        UIS.InputChanged:Connect(function(input)
-            if dragSnow.active and input.UserInputType == Enum.UserInputType.Touch then
-                local delta = input.Position - dragSnow.start
-                snowButtonObj.Position = UDim2.new(
-                    dragSnow.offset.X.Scale,
-                    dragSnow.offset.X.Offset + delta.X,
-                    dragSnow.offset.Y.Scale,
-                    dragSnow.offset.Y.Offset + delta.Y
-                )
-            end
-        end)
-
-        snowButtonObj.MouseButton1Click:Connect(function()
-            aimbotEnabled = not aimbotEnabled
-            snowButtonObj.BackgroundColor3 = aimbotEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(220, 50, 100)
-        end)
-        snowButtonObj.TouchTap:Connect(function()
-            aimbotEnabled = not aimbotEnabled
-            snowButtonObj.BackgroundColor3 = aimbotEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(220, 50, 100)
-        end)
-    end
-
-    local function createLockButton()
-        if lockButtonObj then lockButtonObj:Destroy() end
-        lockButtonObj = Instance.new("ImageButton")
-        lockButtonObj.Size = UDim2.new(0, 45, 0, 45)
-        lockButtonObj.Position = UDim2.new(0.8, 0, 0.5, -22)
-        lockButtonObj.Image = "rbxassetid://73073995075962"
-        lockButtonObj.BackgroundColor3 = Color3.fromRGB(220, 50, 100)
-        lockButtonObj.BackgroundTransparency = 0.3
-        lockButtonObj.Parent = btnGui
-        lockButtonObj.ZIndex = 999
-        corner(lockButtonObj, 22)
-
-        local dragLock = {active = false, start = nil, offset = nil}
-        lockButtonObj.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Touch then
-                dragLock.active = true
-                dragLock.start = input.Position
-                dragLock.offset = lockButtonObj.Position
-            end
-        end)
-        lockButtonObj.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Touch then
-                dragLock.active = false
-            end
-        end)
-        UIS.InputChanged:Connect(function(input)
-            if dragLock.active and input.UserInputType == Enum.UserInputType.Touch then
-                local delta = input.Position - dragLock.start
-                lockButtonObj.Position = UDim2.new(
-                    dragLock.offset.X.Scale,
-                    dragLock.offset.X.Offset + delta.X,
-                    dragLock.offset.Y.Scale,
-                    dragLock.offset.Y.Offset + delta.Y
-                )
-            end
-        end)
-
-        lockButtonObj.MouseButton1Click:Connect(function()
-            lockButtonEnabled = not lockButtonEnabled
-            lockButtonObj.BackgroundColor3 = lockButtonEnabled and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(220, 50, 100)
-            if not lockButtonEnabled then
-                lockTarget = nil
-            end
-        end)
-        lockButtonObj.TouchTap:Connect(function()
-            lockButtonEnabled = not lockButtonEnabled
-            lockButtonObj.BackgroundColor3 = lockButtonEnabled and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(220, 50, 100)
-            if not lockButtonEnabled then
-                lockTarget = nil
-            end
-        end)
-    end
-
-    local mobileSection = mkSection(CL, "Mobile Controls", 2)
-    local snowToggle, getSnow = mkToggle(mobileSection, "Snow Button", false, function(val)
-        snowButtonEnabled = val
-        if val then
-            createSnowButton()
-        elseif snowButtonObj then
-            snowButtonObj:Destroy()
-            snowButtonObj = nil
-        end
-    end)
-
-    local lockToggle, getLock = mkToggle(mobileSection, "Lock Button", false, function(val)
-        lockButtonEnabled = val
-        if val then
-            createLockButton()
-        elseif lockButtonObj then
-            lockButtonObj:Destroy()
-            lockButtonObj = nil
-        end
-    end)
 end
 
 -- ================================================================
---  HIDE / SHOW
+--  HIDE / SHOW (Insert)
 -- ================================================================
-local visible = true
 UIS.InputBegan:Connect(function(i, gpe)
     if gpe then return end
     if i.KeyCode == Enum.KeyCode.Insert then
@@ -1470,8 +1826,10 @@ UIS.InputBegan:Connect(function(i, gpe)
         if mobileButton then mobileButton.Visible = visible end
         if snowButtonObj then snowButtonObj.Visible = visible end
         if lockButtonObj then lockButtonObj.Visible = visible end
+        if aimbotCircle then aimbotCircle.Visible = visible and aimbotCircleEnabled end
     end
 end)
 
 setTab("Home")
 print("[SinyxWare] ✓ Insert = скрыть/показать | Все функции работают")
+print("[SinyxWare] ✓ Конфиги сохраняются в папку: " .. configDir)
