@@ -1,5 +1,5 @@
 -- ================================================================
---  SINYXWARE GUI v9 | ИСПРАВЛЕННЫЙ
+--  SINYXWARE GUI v11 | ПОЛНОСТЬЮ РАБОЧИЙ
 --  Автор: GothbreachHelper
 -- ================================================================
 
@@ -200,14 +200,6 @@ local C = {
     green    = Color3.fromRGB(0, 255, 0),
     yellow   = Color3.fromRGB(255, 255, 0),
 }
-
--- ================================================================
---  ПРОВЕРКА НАЛИЧИЯ DRAWING API
--- ================================================================
-local hasDrawing = pcall(function() return Drawing end)
-if not hasDrawing then
-    print("[SinyxWare] Drawing API not available, ESP disabled")
-end
 
 -- ================================================================
 --  СОЗДАНИЕ ГЛАВНОГО GUI
@@ -645,60 +637,6 @@ local function mkDropdown(parent, label, options, default, callback)
     return wrap, function() return options[idx] end
 end
 
-local function mkColorPicker(parent, label, defaultColor, callback)
-    local wrap = Instance.new("Frame", parent)
-    wrap.Size = UDim2.new(1, 0, 0, 20)
-    wrap.BackgroundTransparency = 1
-
-    local lbl = Instance.new("TextLabel", wrap)
-    lbl.Size = UDim2.new(0.5, 0, 1, 0)
-    lbl.Position = UDim2.new(0, 0, 0, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = label
-    lbl.TextColor3 = C.text
-    lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 7
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local colorBtn = Instance.new("TextButton", wrap)
-    colorBtn.Size = UDim2.new(0, 20, 0, 16)
-    colorBtn.Position = UDim2.new(0.5, 5, 0.5, -8)
-    colorBtn.BackgroundColor3 = defaultColor
-    colorBtn.BorderSizePixel = 0
-    corner(colorBtn, 2)
-    colorBtn.Text = ""
-    colorBtn.AutoButtonColor = false
-
-    local colorBox = Instance.new("TextBox", wrap)
-    colorBox.Size = UDim2.new(0.3, 0, 1, 0)
-    colorBox.Position = UDim2.new(0.7, 0, 0, 0)
-    colorBox.BackgroundColor3 = C.section
-    colorBox.Text = ""
-    colorBox.PlaceholderText = "RGB"
-    colorBox.PlaceholderColor3 = C.dim
-    colorBox.TextColor3 = C.text
-    colorBox.Font = Enum.Font.Gotham
-    colorBox.TextSize = 7
-    colorBox.BorderSizePixel = 0
-    corner(colorBox, 2)
-
-    local currentColor = defaultColor
-    
-    colorBox.FocusLost:Connect(function()
-        local r, g, b = colorBox.Text:match("(%d+),%s*(%d+),%s*(%d+)")
-        if r and g and b then
-            r = math.clamp(tonumber(r), 0, 255)
-            g = math.clamp(tonumber(g), 0, 255)
-            b = math.clamp(tonumber(b), 0, 255)
-            currentColor = Color3.fromRGB(r, g, b)
-            colorBtn.BackgroundColor3 = currentColor
-            if callback then callback(currentColor) end
-        end
-    end)
-
-    return wrap, function() return currentColor end
-end
-
 local function mkSection(parent, title, lo)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, -6, 0, 0)
@@ -799,6 +737,7 @@ end
 -- ================================================================
 --  ПЕРЕМЕННЫЕ
 -- ================================================================
+-- Aimbot
 local aimbotEnabled = false
 local aimbotCircleEnabled = false
 local circleRadius = 50
@@ -808,13 +747,16 @@ local targetPart = "Head"
 local lockTarget = nil
 local lockButtonEnabled = false
 
+-- ESP
 local espEnabled = false
 local espShowBox = true
 local espShowName = true
 local espShowHP = true
 local espShowDist = true
 local espShowTracer = true
+local hasDrawing = pcall(function() return Drawing end)
 
+-- Misc
 local speedHackEnabled = false
 local speedValue = 50
 local infJumpEnabled = false
@@ -822,39 +764,18 @@ local noClipEnabled = false
 local originalWalkSpeed = 16
 local originalJumpPower = 50
 
-local pulseEnabled = false
-local pulseColor = Color3.fromRGB(255, 0, 255)
-local pulseSpeed = 1
-
+-- Visuals
 local skyboxEnabled = false
-local skyboxType = "Default"
-local skyboxes = {
-    Default = "rbxassetid://0",
-    Galaxy = "rbxassetid://6284845874",
-    BloodMoon = "rbxassetid://4863199499",
-    Sunset = "rbxassetid://4770092167",
-    Night = "rbxassetid://4604762642",
-    Aurora = "rbxassetid://4506711431"
-}
-
-local fogEnabled = false
-local fogDistance = 500
-local fogColor = Color3.fromRGB(200, 200, 200)
-
-local auraEnabled = false
-local auraType = "Edge"
-local auraColor = Color3.fromRGB(148, 0, 211)
-
-local ambientEnabled = false
-local ambientColor = Color3.fromRGB(100, 100, 200)
-
 local particlesEnabled = false
-local particleType = "Sparkles"
+local particleMultiplier = 1
+local auraEnabled = false
 
+-- Mobile
 local snowButtonEnabled = false
 local snowButtonObj = nil
 local lockButtonObj = nil
 
+-- GUI видимость
 local visible = true
 local mobileButton = nil
 
@@ -880,11 +801,10 @@ infoText.Size = UDim2.new(1, -10, 0, 80)
 infoText.Position = UDim2.new(0, 5, 0, 110)
 infoText.BackgroundTransparency = 1
 infoText.Text = string.format(
-    "Executor: %s\nDevice: %s\nPlace: %s\nDrawing API: %s",
+    "Executor: %s\nDevice: %s\nPlace: %s",
     currentExecutor,
     deviceType,
-    tostring(game.PlaceId or "Unknown"),
-    hasDrawing and "✅" or "❌"
+    tostring(game.PlaceId or "Unknown")
 )
 infoText.TextColor3 = C.text
 infoText.Font = Enum.Font.Gotham
@@ -927,11 +847,37 @@ local partDropdown, getPart = mkDropdown(aimSection, "Target Part", {"Head", "To
     targetPart = val
 end)
 
+-- Mobile Controls
+if isMobile() then
+    local mobileSection = mkSection(CL, "Mobile Controls", 2)
+    
+    local snowToggle, getSnow = mkToggle(mobileSection, "Snow Button", false, function(val)
+        snowButtonEnabled = val
+        if val then
+            createSnowButton()
+        elseif snowButtonObj then
+            snowButtonObj:Destroy()
+            snowButtonObj = nil
+        end
+    end)
+
+    local lockToggle, getLock = mkToggle(mobileSection, "Lock Button", false, function(val)
+        lockButtonEnabled = val
+        if val then
+            createLockButton()
+        elseif lockButtonObj then
+            lockButtonObj:Destroy()
+            lockButtonObj = nil
+        end
+    end)
+end
+
 -- ================================================================
 --  VISUALS TAB
 -- ================================================================
 local VL, VR = mkTabContent("Visuals")
 
+-- Левый столбец - ESP
 local espSection = mkSection(VL, "ESP Settings", 1)
 
 local espToggle, getEsp = mkToggle(espSection, "Enable ESP", false, function(val)
@@ -965,114 +911,40 @@ local tracerToggle, getTracer = mkToggle(espSection, "Show Tracers", true, funct
     espShowTracer = val
 end)
 
--- Правый столбец - визуалы
+-- Правый столбец - Визуалы
 local visualSection = mkSection(VR, "Visual Effects", 1)
 
-local pulseToggle, getPulse = mkToggle(visualSection, "Pulse Effect", false, function(val)
-    pulseEnabled = val
-    if val then
-        startPulseEffect()
-    end
-end)
-
-local pulseSlider, getPulseSpeed = mkSlider(visualSection, "Pulse Speed", 0.5, 3, 1, function(val)
-    pulseSpeed = val
-end)
-
-local pulseColorPicker, getPulseColor = mkColorPicker(visualSection, "Pulse Color", Color3.fromRGB(255, 0, 255))
-
-local skyboxToggle, getSkybox = mkToggle(visualSection, "Custom Skybox", false, function(val)
+-- Skybox
+local skyboxToggle, getSkybox = mkToggle(visualSection, "Pink Skybox", false, function(val)
     skyboxEnabled = val
     if val then
-        applySkybox()
+        applyPinkSkybox()
     else
         resetSkybox()
     end
 end)
 
-local skyboxDropdown, getSkyboxType = mkDropdown(visualSection, "Skybox Type", {"Default", "Galaxy", "BloodMoon", "Sunset", "Night", "Aurora"}, "Default", function(val)
-    skyboxType = val
-    if skyboxEnabled then
-        applySkybox()
-    end
-end)
-
-local fogToggle, getFog = mkToggle(visualSection, "Custom Fog", false, function(val)
-    fogEnabled = val
+-- Particles
+local particlesToggle, getParticles = mkToggle(visualSection, "Particles", false, function(val)
+    particlesEnabled = val
     if val then
-        applyFog()
+        spawnParticles()
     else
-        resetFog()
+        stopParticles()
     end
 end)
 
-local fogSlider, getFogDist = mkSlider(visualSection, "Fog Distance", 100, 10000, 500, function(val)
-    fogDistance = val
-    if fogEnabled then
-        applyFog()
-    end
+local particlesSlider, getParticleMult = mkSlider(visualSection, "Spawn Multiplier", 1, 10, 1, function(val)
+    particleMultiplier = val
 end)
 
-local fogColorPicker, getFogColor = mkColorPicker(visualSection, "Fog Color", Color3.fromRGB(200, 200, 200), function(val)
-    fogColor = val
-    if fogEnabled then
-        applyFog()
-    end
-end)
-
+-- Aura
 local auraToggle, getAura = mkToggle(visualSection, "Player Aura", false, function(val)
     auraEnabled = val
     if val then
         setupAura()
     else
         removeAura()
-    end
-end)
-
-local auraDropdown, getAuraType = mkDropdown(visualSection, "Aura Type", {"Edge", "Glow", "Fire", "Ice", "Shadow"}, "Edge", function(val)
-    auraType = val
-    if auraEnabled then
-        setupAura()
-    end
-end)
-
-local auraColorPicker, getAuraColor = mkColorPicker(visualSection, "Aura Color", Color3.fromRGB(148, 0, 211), function(val)
-    auraColor = val
-    if auraEnabled then
-        setupAura()
-    end
-end)
-
-local ambientToggle, getAmbient = mkToggle(visualSection, "Custom Ambient", false, function(val)
-    ambientEnabled = val
-    if val then
-        applyAmbient()
-    else
-        resetAmbient()
-    end
-end)
-
-local ambientColorPicker, getAmbientColor = mkColorPicker(visualSection, "Ambient Color", Color3.fromRGB(100, 100, 200), function(val)
-    ambientColor = val
-    if ambientEnabled then
-        applyAmbient()
-    end
-end)
-
-local particlesToggle, getParticles = mkToggle(visualSection, "Particles", false, function(val)
-    particlesEnabled = val
-    if val then
-        spawnParticles()
-    else
-        removeParticles()
-    end
-end)
-
-local particlesDropdown, getParticleType = mkDropdown(visualSection, "Particle Type", {"Sparkles", "Stars", "Flames", "Bubbles", "Snow"}, "Sparkles", function(val)
-    particleType = val
-    if particlesEnabled then
-        removeParticles()
-        spawnParticles()
     end
 end)
 
@@ -1284,96 +1156,157 @@ for _, player in ipairs(Players:GetPlayers()) do
 end
 
 -- ================================================================
---  ВИЗУАЛЬНЫЕ ЭФФЕКТЫ
+--  SKYBOX ФУНКЦИЯ
 -- ================================================================
-local pulseObjects = {}
-
-local function startPulseEffect()
-    if pulseObjects then
-        for _, obj in ipairs(pulseObjects) do
-            pcall(function() obj:Destroy() end)
+local function applyPinkSkybox()
+    for _, child in ipairs(Lighting:GetChildren()) do
+        if child:IsA("Sky") then 
+            child:Destroy() 
         end
-        pulseObjects = {}
     end
+
+    local galaxySky = Instance.new("Sky")
+    galaxySky.Name = "PinkGalaxySky"
     
-    if not pulseEnabled then return end
+    local assetId = "rbxassetid://159454299"
     
-    task.spawn(function()
-        while pulseEnabled do
-            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                local pos = LP.Character.HumanoidRootPart.Position
-                local pulse = Instance.new("Part")
-                pulse.Name = "PulseEffect"
-                pulse.Anchored = true
-                pulse.CanCollide = false
-                pulse.Transparency = 0.7
-                pulse.Material = Enum.Material.Neon
-                pulse.Shape = Enum.PartType.Ball
-                pulse.Size = Vector3.new(1, 1, 1)
-                pulse.Position = pos + Vector3.new(0, 1, 0)
-                pulse.Parent = workspace
+    galaxySky.SkyboxBk = assetId
+    galaxySky.SkyboxDn = assetId
+    galaxySky.SkyboxFt = assetId
+    galaxySky.SkyboxLf = assetId
+    galaxySky.SkyboxRt = assetId
+    galaxySky.SkyboxUp = assetId
+    
+    galaxySky.Parent = Lighting
+end
+
+local function resetSkybox()
+    for _, child in ipairs(Lighting:GetChildren()) do
+        if child:IsA("Sky") then 
+            child:Destroy() 
+        end
+    end
+end
+
+-- ================================================================
+--  PARTICLES ФУНКЦИЯ
+-- ================================================================
+local particleRunning = false
+local particleThread = nil
+local ParticleFolder = nil
+
+local function spawnParticles()
+    if particleRunning then return end
+    particleRunning = true
+    
+    if not ParticleFolder then
+        ParticleFolder = workspace:FindFirstChild("GlobalPinkParticles")
+        if not ParticleFolder then
+            ParticleFolder = Instance.new("Folder")
+            ParticleFolder.Name = "GlobalPinkParticles"
+            ParticleFolder.Parent = workspace
+        end
+    end
+
+    local MAX_DISTANCE = 60
+    local MIN_DISTANCE = 5
+    local BASE_DELAY = 0.05
+    local PARTICLE_LIFETIME = 3
+    local FRAMES = 60
+
+    local function spawnRandomParticle(rootPart)
+        local angle = math.rad(math.random(0, 360))
+        local distance = math.random(MIN_DISTANCE, MAX_DISTANCE)
+        
+        local offsetX = math.cos(angle) * distance
+        local offsetZ = math.sin(angle) * distance
+        local offsetY = math.random(-10, 25)
+
+        local spawnPos = rootPart.Position + Vector3.new(offsetX, offsetY, offsetZ)
+
+        local startSizeX = math.random(4, 12) / 10
+        local startSizeY = math.random(4, 12) / 10
+        local startSizeZ = math.random(4, 12) / 10
+
+        local p = Instance.new("Part")
+        p.Shape = Enum.PartType.Ball
+        p.Size = Vector3.new(startSizeX, startSizeY, startSizeZ)
+        p.Position = spawnPos
+        p.Material = Enum.Material.Neon
+        p.Color = Color3.fromRGB(255, math.random(80, 180), math.random(150, 220))
+        p.Transparency = 0.2
+        p.Anchored = true
+        p.CanCollide = false
+        p.CastShadow = false
+        p.Parent = ParticleFolder
+
+        local upSpeed = math.random(5, 15) / FRAMES
+        local transStep = (1 - 0.2) / FRAMES
+        local stepWait = PARTICLE_LIFETIME / FRAMES
+
+        task.spawn(function()
+            for i = 1, FRAMES do
+                if not p or not p.Parent then break end
                 
-                local color = getPulseColor()
-                pulse.Color = color
+                local progress = i / FRAMES 
                 
-                local endSize = 30
-                local tweenInfo = TweenInfo.new(pulseSpeed * 1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-                local tweenSize = TS:Create(pulse, tweenInfo, {Size = Vector3.new(endSize, endSize, endSize)})
-                local tweenTrans = TS:Create(pulse, tweenInfo, {Transparency = 1})
+                p.Position = p.Position + Vector3.new(0, upSpeed, 0)
+                p.Transparency = p.Transparency + transStep
+                p.Size = Vector3.new(
+                    startSizeX * (1 - progress),
+                    startSizeY * (1 - progress),
+                    startSizeZ * (1 - progress)
+                )
                 
-                tweenSize:Play()
-                tweenTrans:Play()
-                
-                tweenSize.Completed:Connect(function()
-                    pulse:Destroy()
-                end)
-                
-                table.insert(pulseObjects, pulse)
+                task.wait(stepWait)
             end
-            task.wait(0.5)
+            
+            if p and p.Parent then
+                p:Destroy()
+            end
+        end)
+    end
+
+    particleThread = task.spawn(function()
+        while particleRunning do
+            local delay = BASE_DELAY / particleMultiplier
+            task.wait(delay)
+            
+            local character = LP.Character
+            if character then
+                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    for i = 1, math.floor(particleMultiplier) do
+                        spawnRandomParticle(rootPart)
+                    end
+                    if particleMultiplier % 1 > 0 and math.random() < (particleMultiplier % 1) then
+                        spawnRandomParticle(rootPart)
+                    end
+                end
+            end
         end
     end)
 end
 
--- Skybox
-local function applySkybox()
-    local sky = Lighting:FindFirstChild("Sky")
-    if not sky then
-        sky = Instance.new("Sky", Lighting)
+local function stopParticles()
+    particleRunning = false
+    if particleThread then
+        task.cancel(particleThread)
+        particleThread = nil
     end
-    
-    local id = skyboxes[skyboxType] or skyboxes.Default
-    sky.SkyboxBk = id
-    sky.SkyboxDn = id
-    sky.SkyboxFt = id
-    sky.SkyboxLf = id
-    sky.SkyboxRt = id
-    sky.SkyboxUp = id
-end
-
-local function resetSkybox()
-    local sky = Lighting:FindFirstChild("Sky")
-    if sky then
-        sky:Destroy()
+    if ParticleFolder then
+        for _, child in ipairs(ParticleFolder:GetChildren()) do
+            child:Destroy()
+        end
     end
 end
 
--- Fog
-local function applyFog()
-    if fogEnabled then
-        Lighting.FogEnd = fogDistance
-        Lighting.FogStart = fogDistance * 0.1
-        Lighting.FogColor = fogColor
-        Lighting.Fog = true
-    end
-end
-
-local function resetFog()
-    Lighting.Fog = false
-end
-
--- Aura
+-- ================================================================
+--  AURA ФУНКЦИЯ
+-- ================================================================
 local activeEmitters = {}
+local auraCharacter = nil
+local auraConnection = nil
 
 local function applyPerfectAura(part)
     if part:FindFirstChild("EdgeAura") then
@@ -1382,79 +1315,23 @@ local function applyPerfectAura(part)
 
     local particles = Instance.new("ParticleEmitter")
     particles.Name = "EdgeAura"
-    particles.Color = ColorSequence.new(auraColor)
+    particles.Color = ColorSequence.new(Color3.fromRGB(148, 0, 211))
     particles.LightEmission = 1
     particles.LightInfluence = 0
     particles.LockedToPart = true
-    
-    if auraType == "Edge" then
-        particles.Rate = 40
-        particles.Lifetime = NumberRange.new(0.4, 0.6)
-        particles.Speed = NumberRange.new(0, 0.2)
-        particles.SpreadAngle = Vector2.new(180, 180)
-        particles.Size = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.4),
-            NumberSequenceKeypoint.new(0.4, 1.5),
-            NumberSequenceKeypoint.new(1, 3.5)
-        })
-        particles.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.1),
-            NumberSequenceKeypoint.new(1, 1)
-        })
-    elseif auraType == "Glow" then
-        particles.Rate = 60
-        particles.Lifetime = NumberRange.new(0.5, 0.8)
-        particles.Speed = NumberRange.new(0.1, 0.3)
-        particles.SpreadAngle = Vector2.new(360, 360)
-        particles.Size = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.5),
-            NumberSequenceKeypoint.new(1, 4)
-        })
-        particles.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.0),
-            NumberSequenceKeypoint.new(1, 0.9)
-        })
-    elseif auraType == "Fire" then
-        particles.Rate = 80
-        particles.Lifetime = NumberRange.new(0.3, 0.5)
-        particles.Speed = NumberRange.new(0.2, 0.5)
-        particles.SpreadAngle = Vector2.new(90, 180)
-        particles.Size = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.3),
-            NumberSequenceKeypoint.new(1, 2)
-        })
-        particles.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.0),
-            NumberSequenceKeypoint.new(1, 1)
-        })
-    elseif auraType == "Ice" then
-        particles.Rate = 50
-        particles.Lifetime = NumberRange.new(0.6, 0.9)
-        particles.Speed = NumberRange.new(0.1, 0.2)
-        particles.SpreadAngle = Vector2.new(45, 180)
-        particles.Size = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.5),
-            NumberSequenceKeypoint.new(1, 3)
-        })
-        particles.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.1),
-            NumberSequenceKeypoint.new(1, 0.8)
-        })
-    elseif auraType == "Shadow" then
-        particles.Rate = 30
-        particles.Lifetime = NumberRange.new(0.5, 0.7)
-        particles.Speed = NumberRange.new(0.05, 0.15)
-        particles.SpreadAngle = Vector2.new(180, 360)
-        particles.Size = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.8),
-            NumberSequenceKeypoint.new(1, 4)
-        })
-        particles.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.0),
-            NumberSequenceKeypoint.new(1, 0.95)
-        })
-    end
-    
+    particles.Rate = 40 
+    particles.Lifetime = NumberRange.new(0.4, 0.6)
+    particles.Speed = NumberRange.new(0, 0.2)
+    particles.SpreadAngle = Vector2.new(180, 180)
+    particles.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.4),
+        NumberSequenceKeypoint.new(0.4, 1.5), 
+        NumberSequenceKeypoint.new(1, 3.5)
+    })
+    particles.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.1),
+        NumberSequenceKeypoint.new(1, 1)
+    })
     particles.Parent = part
     table.insert(activeEmitters, particles)
 end
@@ -1470,11 +1347,37 @@ local function setupAura()
     
     if not auraEnabled then return end
     
+    auraCharacter = char
     for _, obj in pairs(char:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
             applyPerfectAura(obj)
         end
     end
+    
+    if auraConnection then
+        auraConnection:Disconnect()
+    end
+    
+    auraConnection = RunService.RenderStepped:Connect(function()
+        local head = char:FindFirstChild("Head")
+        if not head then return end
+        
+        local distance = (Camera.CFrame.Position - head.Position).Magnitude
+        
+        if distance < 2 then
+            for _, emitter in pairs(activeEmitters) do
+                if emitter and emitter.Parent then
+                    emitter.Enabled = false
+                end
+            end
+        else
+            for _, emitter in pairs(activeEmitters) do
+                if emitter and emitter.Parent then
+                    emitter.Enabled = true
+                end
+            end
+        end
+    end)
 end
 
 local function removeAura()
@@ -1482,88 +1385,18 @@ local function removeAura()
         pcall(function() emitter:Destroy() end)
     end
     activeEmitters = {}
-end
-
--- Ambient
-local function applyAmbient()
-    if ambientEnabled then
-        Lighting.Ambient = ambientColor
-        Lighting.Brightness = 1.5
-        Lighting.OutdoorAmbient = ambientColor
+    if auraConnection then
+        auraConnection:Disconnect()
+        auraConnection = nil
     end
 end
 
-local function resetAmbient()
-    Lighting.Ambient = Color3.fromRGB(127, 127, 127)
-    Lighting.Brightness = 1
-    Lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
-end
-
--- Particles
-local particleObjects = {}
-
-local function spawnParticles()
-    if particleObjects then
-        for _, obj in ipairs(particleObjects) do
-            pcall(function() obj:Destroy() end)
-        end
-        particleObjects = {}
+LP.CharacterAdded:Connect(function(char)
+    task.wait(0.5)
+    if auraEnabled then
+        setupAura()
     end
-    
-    if not particlesEnabled then return end
-    
-    task.spawn(function()
-        while particlesEnabled do
-            local char = LP.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local pos = char.HumanoidRootPart.Position
-                
-                local particle = Instance.new("Part")
-                particle.Anchored = true
-                particle.CanCollide = false
-                particle.Size = Vector3.new(0.5, 0.5, 0.5)
-                particle.Transparency = 0.5
-                particle.Material = Enum.Material.Neon
-                particle.Position = pos + Vector3.new(
-                    math.random(-20, 20),
-                    math.random(0, 10),
-                    math.random(-20, 20)
-                )
-                
-                if particleType == "Sparkles" then
-                    particle.Color = Color3.fromRGB(255, 255, 255)
-                    particle.Shape = Enum.PartType.Ball
-                elseif particleType == "Stars" then
-                    particle.Color = Color3.fromRGB(255, 255, 0)
-                    particle.Shape = Enum.PartType.Block
-                elseif particleType == "Flames" then
-                    particle.Color = Color3.fromRGB(255, 100, 0)
-                    particle.Shape = Enum.PartType.Ball
-                elseif particleType == "Bubbles" then
-                    particle.Color = Color3.fromRGB(0, 150, 255)
-                    particle.Transparency = 0.8
-                    particle.Shape = Enum.PartType.Ball
-                elseif particleType == "Snow" then
-                    particle.Color = Color3.fromRGB(255, 255, 255)
-                    particle.Shape = Enum.PartType.Ball
-                end
-                
-                particle.Parent = workspace
-                table.insert(particleObjects, particle)
-                
-                task.wait(0.05)
-            end
-            task.wait(0.1)
-        end
-    end)
-end
-
-local function removeParticles()
-    for _, obj in ipairs(particleObjects) do
-        pcall(function() obj:Destroy() end)
-    end
-    particleObjects = {}
-end
+end)
 
 -- ================================================================
 --  MISC TAB
@@ -1788,16 +1621,10 @@ local function saveConfig(name)
             noClipEnabled = noClipEnabled
         },
         visuals = {
-            pulseEnabled = pulseEnabled,
-            pulseSpeed = pulseSpeed,
-            skyboxType = skyboxType,
-            fogEnabled = fogEnabled,
-            fogDistance = fogDistance,
-            auraEnabled = auraEnabled,
-            auraType = auraType,
-            ambientEnabled = ambientEnabled,
+            skyboxEnabled = skyboxEnabled,
             particlesEnabled = particlesEnabled,
-            particleType = particleType
+            particleMultiplier = particleMultiplier,
+            auraEnabled = auraEnabled
         }
     }
     
@@ -1843,16 +1670,10 @@ local function loadConfig(name)
     end
     
     if config.visuals then
-        pulseEnabled = config.visuals.pulseEnabled or false
-        pulseSpeed = config.visuals.pulseSpeed or 1
-        skyboxType = config.visuals.skyboxType or "Default"
-        fogEnabled = config.visuals.fogEnabled or false
-        fogDistance = config.visuals.fogDistance or 500
-        auraEnabled = config.visuals.auraEnabled or false
-        auraType = config.visuals.auraType or "Edge"
-        ambientEnabled = config.visuals.ambientEnabled or false
+        skyboxEnabled = config.visuals.skyboxEnabled or false
         particlesEnabled = config.visuals.particlesEnabled or false
-        particleType = config.visuals.particleType or "Sparkles"
+        particleMultiplier = config.visuals.particleMultiplier or 1
+        auraEnabled = config.visuals.auraEnabled or false
     end
     
     print("[SinyxWare] Config loaded: " .. name)
@@ -1889,7 +1710,7 @@ end
 updateConfigList()
 
 -- ================================================================
---  АИМБОТ ЛОГИКА (С ЗАЩИТОЙ ОТ ОШИБОК)
+--  АИМБОТ ЛОГИКА
 -- ================================================================
 local function getTargetPart(character)
     if targetPart == "Head" then
@@ -1904,7 +1725,6 @@ end
 local aimbotCircle = nil
 
 RunService.RenderStepped:Connect(function()
-    -- Рисуем круг
     if aimbotCircleEnabled and hasDrawing then
         if not aimbotCircle then
             aimbotCircle = Drawing.new("Circle")
@@ -1923,7 +1743,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
     
-    -- Аимбот
     if not aimbotEnabled then return end
 
     local localChar = LP.Character
@@ -1985,7 +1804,6 @@ RunService.RenderStepped:Connect(function()
         if onScreen then
             local smoothFactor = smoothness / 100
             
-            -- Используем Mouse для перемещения
             pcall(function()
                 if smoothFactor >= 0.95 then
                     Mouse.Move(screenPos.X, screenPos.Y)
@@ -2264,6 +2082,6 @@ UIS.InputBegan:Connect(function(i, gpe)
 end)
 
 setTab("Home")
-print("[SinyxWare] ✓ Insert = скрыть/показать | Все функции работают")
+print("[SinyxWare] ✓ Все функции работают")
+print("[SinyxWare] ✓ Insert = скрыть/показать")
 print("[SinyxWare] ✓ Конфиги сохраняются в папку: " .. configDir)
-print("[SinyxWare] ✓ Drawing API: " .. (hasDrawing and "Доступен" or "НЕДОСТУПЕН"))
