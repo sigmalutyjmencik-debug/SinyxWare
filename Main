@@ -1,5 +1,5 @@
 -- ================================================================
---  RUSHACK GUI v3 | Розовый градиент + Home + Mobile
+--  SINYXWARE GUI v4 | Полный функционал + Градиенты + Мобила
 --  Автор: GothbreachHelper
 -- ================================================================
 
@@ -7,7 +7,14 @@ local UIS = game:GetService("UserInputService")
 local TS  = game:GetService("TweenService")
 local CG  = game:GetService("CoreGui")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LP = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- ================================================================
+--  ЗАЩИТА ОТ ДУБЛИРОВАНИЯ
+-- ================================================================
+pcall(function() CG:FindFirstChild("SinyxWare_Main"):Destroy() end)
 
 -- ================================================================
 --  ОПРЕДЕЛЕНИЕ УСТРОЙСТВА
@@ -41,43 +48,172 @@ end
 local currentExecutor = DetectExecutor()
 
 -- ================================================================
---  ЦВЕТА (розовый градиент + акцент)
+--  УВЕДОМЛЕНИЕ ПРИ ИНЖЕКТЕ
+-- ================================================================
+task.spawn(function()
+    local old_notif = CG:FindFirstChild("SinyxWare_Notification_Fixed_Tight")
+    if old_notif then old_notif:Destroy() end
+
+    local TweenService = game:GetService("TweenService")
+    local SoundService = game:GetService("SoundService")
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "SinyxWare_Notification_Fixed_Tight"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = CG
+
+    local NotificationSound = Instance.new("Sound")
+    NotificationSound.SoundId = "rbxassetid://7383525713"
+    NotificationSound.Volume = 1.5
+    NotificationSound.Parent = SoundService
+
+    local NotifFrame = Instance.new("Frame")
+    NotifFrame.Name = "NotifFrame"
+    NotifFrame.Size = UDim2.new(0, 260, 0, 50)
+    NotifFrame.Position = UDim2.new(1, 50, 0, 40)
+    NotifFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    NotifFrame.BorderSizePixel = 0
+    NotifFrame.Parent = ScreenGui
+
+    local BackgroundGradient = Instance.new("UIGradient")
+    BackgroundGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 20, 240)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 140))
+    })
+    BackgroundGradient.Rotation = 45
+    BackgroundGradient.Parent = NotifFrame
+
+    local ProgressBackground = Instance.new("Frame")
+    ProgressBackground.Size = UDim2.new(1, 0, 0, 2)
+    ProgressBackground.Position = UDim2.new(0, 0, 1, -2)
+    ProgressBackground.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    ProgressBackground.BackgroundTransparency = 0.75
+    ProgressBackground.BorderSizePixel = 0
+    ProgressBackground.Parent = NotifFrame
+
+    local progressDuration = 7.0
+    local ProgressBar = Instance.new("Frame")
+    ProgressBar.Size = UDim2.new(0, 0, 1, 0)
+    ProgressBar.Position = UDim2.new(0, 0, 0, 0)
+    ProgressBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ProgressBar.BorderSizePixel = 0
+    ProgressBar.Parent = ProgressBackground
+
+    local TitleContainer = Instance.new("Frame")
+    TitleContainer.Size = UDim2.new(1, -20, 0, 22)
+    TitleContainer.Position = UDim2.new(0, 12, 0, 6)
+    TitleContainer.BackgroundTransparency = 1
+    TitleContainer.Parent = NotifFrame
+
+    local BrandLabel = Instance.new("TextLabel")
+    BrandLabel.Size = UDim2.new(1, 0, 1, 0)
+    BrandLabel.BackgroundTransparency = 1
+    BrandLabel.Text = "Sinyxware"
+    BrandLabel.TextSize = 14
+    BrandLabel.Font = Enum.Font.SourceSansBold
+    BrandLabel.TextXAlignment = Enum.TextXAlignment.Left
+    BrandLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BrandLabel.Parent = TitleContainer
+
+    local BrandGradient = Instance.new("UIGradient")
+    BrandGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 210, 245)),
+        ColorSequenceKeypoint.new(0.49, Color3.fromRGB(180, 0, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 10, 50)),
+        ColorSequenceKeypoint.new(1.0, Color3.fromRGB(255, 120, 180))
+    })
+    BrandGradient.Rotation = 0
+    BrandGradient.Parent = BrandLabel
+
+    local LoadedLabel = Instance.new("TextLabel")
+    LoadedLabel.Size = UDim2.new(1, 0, 1, 0)
+    LoadedLabel.Position = UDim2.new(0, 65, 0, 0)
+    LoadedLabel.BackgroundTransparency = 1
+    LoadedLabel.Text = " loaded"
+    LoadedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LoadedLabel.TextSize = 14
+    LoadedLabel.Font = Enum.Font.SourceSansBold
+    LoadedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    LoadedLabel.Parent = TitleContainer
+
+    local LoadedGradient = Instance.new("UIGradient")
+    LoadedGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 180, 230)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(235, 20, 140))
+    })
+    LoadedGradient.Rotation = 45
+    LoadedGradient.Parent = LoadedLabel
+
+    local SubLabel = Instance.new("TextLabel")
+    SubLabel.Size = UDim2.new(1, -20, 0, 16)
+    SubLabel.Position = UDim2.new(0, 12, 0, 26)
+    SubLabel.BackgroundTransparency = 1
+    SubLabel.Text = "press CTRL to open/close gui"
+    SubLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SubLabel.TextSize = 11
+    SubLabel.Font = Enum.Font.SourceSansItalic
+    SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SubLabel.Parent = NotifFrame
+
+    local tweenInfoIn = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out)
+    local tweenInfoOut = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.In)
+    local tweenInfoProgress = TweenInfo.new(progressDuration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+
+    local targetPosIn = UDim2.new(1, -280, 0, 40)
+    local targetPosOut = UDim2.new(1, 50, 0, 40)
+
+    local animateIn = TweenService:Create(NotifFrame, tweenInfoIn, {Position = targetPosIn})
+    local animateOut = TweenService:Create(NotifFrame, tweenInfoOut, {Position = targetPosOut})
+    local animateProgress = TweenService:Create(ProgressBar, tweenInfoProgress, {Size = UDim2.new(1, 0, 1, 0)})
+
+    pcall(function() NotificationSound:Play() end)
+    animateIn:Play()
+    animateIn.Completed:Connect(function() animateProgress:Play() end)
+    task.wait(progressDuration + 0.8)
+    animateOut:Play()
+    animateOut.Completed:Connect(function()
+        pcall(function() NotificationSound:Destroy() end)
+        ScreenGui:Destroy()
+    end)
+end)
+
+-- ================================================================
+--  ЦВЕТА (РОЗОВЫЙ ГРАДИЕНТ + АКЦЕНТ)
 -- ================================================================
 local C = {
-    bg       = Color3.fromRGB(45, 20, 35),    -- тёмно-розовый фон
-    sidebar  = Color3.fromRGB(55, 25, 40),
-    panel    = Color3.fromRGB(70, 30, 50),
-    section  = Color3.fromRGB(85, 35, 60),
-    red      = Color3.fromRGB(220, 50, 100),  -- основной розовый
+    bg       = Color3.fromRGB(30, 15, 25),
+    sidebar  = Color3.fromRGB(45, 20, 35),
+    panel    = Color3.fromRGB(60, 25, 45),
+    section  = Color3.fromRGB(75, 30, 55),
+    red      = Color3.fromRGB(220, 50, 100),
     redDark  = Color3.fromRGB(150, 20, 60),
     redBord  = Color3.fromRGB(200, 40, 80),
     text     = Color3.fromRGB(235, 220, 230),
     dim      = Color3.fromRGB(180, 150, 170),
     white    = Color3.fromRGB(255, 255, 255),
-    border   = Color3.fromRGB(90, 40, 70),
-    togOff   = Color3.fromRGB(80, 50, 70),
+    border   = Color3.fromRGB(80, 35, 65),
+    togOff   = Color3.fromRGB(70, 40, 60),
 }
 
 -- ================================================================
---  СОЗДАНИЕ GUI
+--  СОЗДАНИЕ ГЛАВНОГО GUI
 -- ================================================================
-pcall(function() CG:FindFirstChild("RusHack"):Destroy() end)
-
 local Root = Instance.new("ScreenGui")
-Root.Name = "RusHack"; Root.ResetOnSpawn = false
-Root.IgnoreGuiInset = true; Root.ZIndexBehavior = Enum.ZIndexBehavior.Global
+Root.Name = "SinyxWare_Main"
+Root.ResetOnSpawn = false
+Root.IgnoreGuiInset = true
+Root.ZIndexBehavior = Enum.ZIndexBehavior.Global
 Root.Parent = CG
 
--- Размеры (390x270 как в оригинале)
 local W, H = 390, 270
 local SW = 90
 
--- Внешняя рамка с градиентом (розовый → красный)
+-- Внешняя рамка с градиентом
 local Outer = Instance.new("Frame", Root)
-Outer.Size     = UDim2.new(0, W, 0, H)
+Outer.Size = UDim2.new(0, W, 0, H)
 Outer.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
 Outer.BackgroundColor3 = C.red
-Outer.BorderSizePixel  = 0
+Outer.BorderSizePixel = 0
 local gradOuter = Instance.new("UIGradient", Outer)
 gradOuter.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 150)),
@@ -87,14 +223,13 @@ Instance.new("UICorner", Outer).CornerRadius = UDim.new(0, 4)
 
 -- Главное окно
 local Main = Instance.new("Frame", Outer)
-Main.Size     = UDim2.new(1, -4, 1, -4)
+Main.Size = UDim2.new(1, -4, 1, -4)
 Main.Position = UDim2.new(0, 2, 0, 2)
 Main.BackgroundColor3 = C.bg
-Main.BorderSizePixel  = 0
+Main.BorderSizePixel = 0
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
--- Градиент для фона Main (тоже розовый)
 local gradMain = Instance.new("UIGradient", Main)
 gradMain.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 22, 40)),
@@ -102,7 +237,7 @@ gradMain.Color = ColorSequence.new{
 }
 
 -- ================================================================
---  DRAG (за весь Main)
+--  DRAG
 -- ================================================================
 local drag, dstart, ostart = false, nil, nil
 Main.InputBegan:Connect(function(i)
@@ -131,7 +266,7 @@ end)
 local Sidebar = Instance.new("Frame", Main)
 Sidebar.Size = UDim2.new(0, SW, 1, 0)
 Sidebar.BackgroundColor3 = C.sidebar
-Sidebar.BorderSizePixel  = 0
+Sidebar.BorderSizePixel = 0
 local gradSide = Instance.new("UIGradient", Sidebar)
 gradSide.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 25, 45)),
@@ -142,9 +277,9 @@ local SDiv = Instance.new("Frame", Main)
 SDiv.Size = UDim2.new(0, 1, 1, 0)
 SDiv.Position = UDim2.new(0, SW, 0, 0)
 SDiv.BackgroundColor3 = C.border
-SDiv.BorderSizePixel  = 0
+SDiv.BorderSizePixel = 0
 
--- Заголовок "RusHack" (оставляем как есть, но с розовым)
+-- Заголовок
 local TitleF = Instance.new("Frame", Sidebar)
 TitleF.Size = UDim2.new(1, 0, 0, 26)
 TitleF.BackgroundTransparency = 1
@@ -153,7 +288,7 @@ local TitleL = Instance.new("TextLabel", TitleF)
 TitleL.Size = UDim2.new(1, 0, 1, 0)
 TitleL.BackgroundTransparency = 1
 TitleL.RichText = true
-TitleL.Text = '<font color="rgb(235,220,230)">Rus</font><font color="rgb(220,50,100)">Hack</font>'
+TitleL.Text = '<font color="rgb(255,210,245)">Sinyx</font><font color="rgb(220,50,100)">Ware</font>'
 TitleL.Font = Enum.Font.GothamBold
 TitleL.TextSize = 10
 TitleL.TextXAlignment = Enum.TextXAlignment.Center
@@ -162,15 +297,16 @@ local TDiv = Instance.new("Frame", Sidebar)
 TDiv.Size = UDim2.new(1, 0, 0, 1)
 TDiv.Position = UDim2.new(0, 0, 0, 26)
 TDiv.BackgroundColor3 = C.border
-TDiv.BorderSizePixel  = 0
+TDiv.BorderSizePixel = 0
 
--- Табы (Home, Combat, Visuals, Misc)
+-- Табы
 local TABS = {
     { n = "Home",    ico = "⌂" },
     { n = "Combat",  ico = "✖" },
     { n = "Visuals", ico = "◎" },
     { n = "Misc",    ico = "◉" },
 }
+
 local TabBtns = {}
 local currentTab = "Home"
 local TabContents = {}
@@ -188,8 +324,8 @@ local function setTab(name)
     for n, t in pairs(TabBtns) do
         local on = n == name
         t.bar.BackgroundTransparency = on and 0 or 1
-        t.ico.TextColor3  = on and C.red  or C.dim
-        t.lbl.TextColor3  = on and C.white or C.dim
+        t.ico.TextColor3 = on and C.red or C.dim
+        t.lbl.TextColor3 = on and C.white or C.dim
     end
     for n, f in pairs(TabContents) do
         f.Visible = n == name
@@ -208,7 +344,7 @@ for i, tab in ipairs(TABS) do
     bar.Size = UDim2.new(0, 2, 0.65, 0)
     bar.Position = UDim2.new(0, 0, 0.175, 0)
     bar.BackgroundColor3 = C.red
-    bar.BorderSizePixel  = 0
+    bar.BorderSizePixel = 0
     bar.BackgroundTransparency = tab.n == "Home" and 0 or 1
     Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 1)
 
@@ -244,11 +380,11 @@ ContentArea.Position = UDim2.new(0, SW+1, 0, 0)
 ContentArea.BackgroundTransparency = 1
 ContentArea.ClipsDescendants = true
 
--- Топбар (поиск оставляем, но можно убрать, оставим для эстетики)
+-- Топбар
 local TopBar = Instance.new("Frame", ContentArea)
 TopBar.Size = UDim2.new(1, 0, 0, 21)
 TopBar.BackgroundColor3 = C.sidebar
-TopBar.BorderSizePixel  = 0
+TopBar.BorderSizePixel = 0
 local gradTop = Instance.new("UIGradient", TopBar)
 gradTop.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 25, 45)),
@@ -259,17 +395,20 @@ local SearchIco = Instance.new("TextLabel", TopBar)
 SearchIco.Size = UDim2.new(0, 14, 1, 0)
 SearchIco.Position = UDim2.new(0, 4, 0, 0)
 SearchIco.BackgroundTransparency = 1
-SearchIco.Text = "🔍"; SearchIco.TextSize = 7
+SearchIco.Text = "🔍"
+SearchIco.TextSize = 7
 SearchIco.TextColor3 = C.dim
 
 local SearchBox = Instance.new("TextBox", TopBar)
 SearchBox.Size = UDim2.new(1, -40, 1, -4)
 SearchBox.Position = UDim2.new(0, 20, 0, 2)
 SearchBox.BackgroundTransparency = 1
-SearchBox.Text = ""; SearchBox.PlaceholderText = "Search"
+SearchBox.Text = ""
+SearchBox.PlaceholderText = "Search"
 SearchBox.PlaceholderColor3 = C.dim
 SearchBox.TextColor3 = C.text
-SearchBox.Font = Enum.Font.Gotham; SearchBox.TextSize = 7
+SearchBox.Font = Enum.Font.Gotham
+SearchBox.TextSize = 7
 SearchBox.TextXAlignment = Enum.TextXAlignment.Left
 SearchBox.BorderSizePixel = 0
 
@@ -277,8 +416,10 @@ local MoveIco = Instance.new("TextLabel", TopBar)
 MoveIco.Size = UDim2.new(0, 14, 0, 14)
 MoveIco.Position = UDim2.new(1, -17, 0.5, -7)
 MoveIco.BackgroundColor3 = C.section
-MoveIco.Text = "✛"; MoveIco.TextSize = 7
-MoveIco.TextColor3 = C.dim; MoveIco.Font = Enum.Font.GothamBold
+MoveIco.Text = "✛"
+MoveIco.TextSize = 7
+MoveIco.TextColor3 = C.dim
+MoveIco.Font = Enum.Font.GothamBold
 MoveIco.BorderSizePixel = 0
 Instance.new("UICorner", MoveIco).CornerRadius = UDim.new(0, 2)
 
@@ -286,14 +427,14 @@ local TopDiv = Instance.new("Frame", ContentArea)
 TopDiv.Size = UDim2.new(1, 0, 0, 1)
 TopDiv.Position = UDim2.new(0, 0, 0, 21)
 TopDiv.BackgroundColor3 = C.border
-TopDiv.BorderSizePixel  = 0
+TopDiv.BorderSizePixel = 0
 
--- Нижняя строка (Rusted)
+-- Нижняя строка
 local BotBar = Instance.new("Frame", Main)
 BotBar.Size = UDim2.new(1, -SW, 0, 14)
 BotBar.Position = UDim2.new(0, SW, 1, -14)
 BotBar.BackgroundColor3 = C.sidebar
-BotBar.BorderSizePixel  = 0
+BotBar.BorderSizePixel = 0
 local gradBot = Instance.new("UIGradient", BotBar)
 gradBot.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 25, 45)),
@@ -303,22 +444,27 @@ gradBot.Color = ColorSequence.new{
 local BotDiv = Instance.new("Frame", Main)
 BotDiv.Size = UDim2.new(1, -SW, 0, 1)
 BotDiv.Position = UDim2.new(0, SW, 1, -15)
-BotDiv.BackgroundColor3 = C.border; BotDiv.BorderSizePixel = 0
+BotDiv.BackgroundColor3 = C.border
+BotDiv.BorderSizePixel = 0
 
 local BotLbl = Instance.new("TextLabel", BotBar)
 BotLbl.Size = UDim2.new(1, 0, 1, 0)
 BotLbl.BackgroundTransparency = 1
-BotLbl.Text = "Rusted"; BotLbl.TextColor3 = C.dim
-BotLbl.Font = Enum.Font.Gotham; BotLbl.TextSize = 7
+BotLbl.Text = "SinyxWare"
+BotLbl.TextColor3 = C.dim
+BotLbl.Font = Enum.Font.Gotham
+BotLbl.TextSize = 7
 BotLbl.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ================================================================
---  ХЕЛПЕРЫ (скопированы из оригинала, с небольшими изменениями)
+--  ХЕЛПЕРЫ
 -- ================================================================
-local function corner(f, r) Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2) end
+local function corner(f, r)
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2)
+end
 
--- Тоггл (ползунок с анимацией) — используем для аимбота
-local function mkToggle(parent, label, default)
+-- Тоггл с анимацией
+local function mkToggle(parent, label, default, callback)
     local row = Instance.new("Frame", parent)
     row.Size = UDim2.new(1, 0, 0, 16)
     row.BackgroundTransparency = 1
@@ -327,21 +473,26 @@ local function mkToggle(parent, label, default)
     lbl.Size = UDim2.new(1, -30, 1, 0)
     lbl.Position = UDim2.new(0, 5, 0, 0)
     lbl.BackgroundTransparency = 1
-    lbl.Text = label; lbl.TextColor3 = C.text
-    lbl.Font = Enum.Font.Gotham; lbl.TextSize = 7
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 7
     lbl.TextXAlignment = Enum.TextXAlignment.Left
 
     local pill = Instance.new("TextButton", row)
     pill.Size = UDim2.new(0, 22, 0, 12)
     pill.Position = UDim2.new(1, -26, 0.5, -6)
     pill.BackgroundColor3 = default and C.red or C.togOff
-    pill.BorderSizePixel = 0; pill.Text = ""; pill.AutoButtonColor = false
+    pill.BorderSizePixel = 0
+    pill.Text = ""
+    pill.AutoButtonColor = false
     corner(pill, 6)
 
     local knob = Instance.new("Frame", pill)
     knob.Size = UDim2.new(0, 8, 0, 8)
-    knob.Position = default and UDim2.new(1,-10,0.5,-4) or UDim2.new(0,2,0.5,-4)
-    knob.BackgroundColor3 = C.white; knob.BorderSizePixel = 0
+    knob.Position = default and UDim2.new(1, -10, 0.5, -4) or UDim2.new(0, 2, 0.5, -4)
+    knob.BackgroundColor3 = C.white
+    knob.BorderSizePixel = 0
     corner(knob, 4)
 
     local val = default
@@ -349,14 +500,15 @@ local function mkToggle(parent, label, default)
         val = not val
         TS:Create(pill, TweenInfo.new(0.12), { BackgroundColor3 = val and C.red or C.togOff }):Play()
         TS:Create(knob, TweenInfo.new(0.12), {
-            Position = val and UDim2.new(1,-10,0.5,-4) or UDim2.new(0,2,0.5,-4)
+            Position = val and UDim2.new(1, -10, 0.5, -4) or UDim2.new(0, 2, 0.5, -4)
         }):Play()
+        if callback then callback(val) end
     end)
-    return row
+    return row, function() return val end
 end
 
--- Слайдер (красная заполненная полоса с текстом внутри) — для размера кружка
-local function mkSlider(parent, label, mn, mx, def)
+-- Слайдер
+local function mkSlider(parent, label, mn, mx, def, callback)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 26)
     wrap.BackgroundTransparency = 1
@@ -365,28 +517,34 @@ local function mkSlider(parent, label, mn, mx, def)
     lbl.Size = UDim2.new(1, -5, 0, 11)
     lbl.Position = UDim2.new(0, 5, 0, 1)
     lbl.BackgroundTransparency = 1
-    lbl.Text = label; lbl.TextColor3 = C.text
-    lbl.Font = Enum.Font.Gotham; lbl.TextSize = 7
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 7
     lbl.TextXAlignment = Enum.TextXAlignment.Left
 
     local track = Instance.new("TextButton", wrap)
     track.Size = UDim2.new(1, -10, 0, 12)
     track.Position = UDim2.new(0, 5, 0, 13)
     track.BackgroundColor3 = C.redDark
-    track.BorderSizePixel = 0; track.Text = ""; track.AutoButtonColor = false
+    track.BorderSizePixel = 0
+    track.Text = ""
+    track.AutoButtonColor = false
     corner(track, 2)
 
     local fill = Instance.new("Frame", track)
-    fill.Size = UDim2.new((def-mn)/(mx-mn), 0, 1, 0)
-    fill.BackgroundColor3 = C.red; fill.BorderSizePixel = 0
+    fill.Size = UDim2.new((def - mn) / (mx - mn), 0, 1, 0)
+    fill.BackgroundColor3 = C.red
+    fill.BorderSizePixel = 0
     corner(fill, 2)
 
     local valLbl = Instance.new("TextLabel", track)
     valLbl.Size = UDim2.new(1, 0, 1, 0)
     valLbl.BackgroundTransparency = 1
-    valLbl.Text = ("%g/%g"):format(def, mx)
+    valLbl.Text = tostring(def)
     valLbl.TextColor3 = C.white
-    valLbl.Font = Enum.Font.GothamBold; valLbl.TextSize = 7
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.TextSize = 7
     valLbl.ZIndex = 3
 
     local val = def
@@ -397,12 +555,14 @@ local function mkSlider(parent, label, mn, mx, def)
         local pct = rx / track.AbsoluteSize.X
         val = math.floor(mn + (mx - mn) * pct + 0.5)
         fill.Size = UDim2.new(pct, 0, 1, 0)
-        valLbl.Text = ("%g/%g"):format(val, mx)
+        valLbl.Text = tostring(val)
+        if callback then callback(val) end
     end
 
     track.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            sliding = true; upd(i.Position.X)
+            sliding = true
+            upd(i.Position.X)
         end
     end)
     UIS.InputChanged:Connect(function(i)
@@ -416,10 +576,10 @@ local function mkSlider(parent, label, mn, mx, def)
         end
     end)
 
-    return wrap
+    return wrap, function() return val end
 end
 
--- Секция (заголовок + тело)
+-- Секция
 local function mkSection(parent, title, lo)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, -6, 0, 0)
@@ -431,23 +591,27 @@ local function mkSection(parent, title, lo)
     local hdr = Instance.new("Frame", wrap)
     hdr.Size = UDim2.new(1, 0, 0, 17)
     hdr.BackgroundColor3 = C.section
-    hdr.BorderSizePixel  = 0
+    hdr.BorderSizePixel = 0
     corner(hdr, 2)
 
     local htxt = Instance.new("TextLabel", hdr)
     htxt.Size = UDim2.new(1, -22, 1, 0)
     htxt.Position = UDim2.new(0, 6, 0, 0)
     htxt.BackgroundTransparency = 1
-    htxt.Text = title; htxt.TextColor3 = C.text
-    htxt.Font = Enum.Font.GothamBold; htxt.TextSize = 7
+    htxt.Text = title
+    htxt.TextColor3 = C.text
+    htxt.Font = Enum.Font.GothamBold
+    htxt.TextSize = 7
     htxt.TextXAlignment = Enum.TextXAlignment.Left
 
     local chevron = Instance.new("TextButton", hdr)
     chevron.Size = UDim2.new(0, 16, 1, 0)
     chevron.Position = UDim2.new(1, -18, 0, 0)
     chevron.BackgroundTransparency = 1
-    chevron.Text = "∨"; chevron.TextColor3 = C.dim
-    chevron.Font = Enum.Font.GothamBold; chevron.TextSize = 8
+    chevron.Text = "∨"
+    chevron.TextColor3 = C.dim
+    chevron.Font = Enum.Font.GothamBold
+    chevron.TextSize = 8
     chevron.AutoButtonColor = false
 
     local body = Instance.new("Frame", wrap)
@@ -455,14 +619,16 @@ local function mkSection(parent, title, lo)
     body.AutomaticSize = Enum.AutomaticSize.Y
     body.Position = UDim2.new(0, 0, 0, 19)
     body.BackgroundColor3 = C.panel
-    body.BorderSizePixel  = 0
+    body.BorderSizePixel = 0
     corner(body, 2)
 
     local bl = Instance.new("UIListLayout", body)
-    bl.Padding = UDim.new(0, 1); bl.SortOrder = Enum.SortOrder.LayoutOrder
+    bl.Padding = UDim.new(0, 1)
+    bl.SortOrder = Enum.SortOrder.LayoutOrder
 
     local bp = Instance.new("UIPadding", body)
-    bp.PaddingTop = UDim.new(0, 3); bp.PaddingBottom = UDim.new(0, 3)
+    bp.PaddingTop = UDim.new(0, 3)
+    bp.PaddingBottom = UDim.new(0, 3)
 
     local collapsed = false
     chevron.MouseButton1Click:Connect(function()
@@ -474,9 +640,7 @@ local function mkSection(parent, title, lo)
     return body
 end
 
--- ================================================================
---  ФУНКЦИЯ СОЗДАНИЯ ВКЛАДКИ (два столбца)
--- ================================================================
+-- Создание вкладки
 local function mkTabContent(name)
     local f = Instance.new("ScrollingFrame", ContentArea)
     f.Size = UDim2.new(1, 0, 1, -23)
@@ -487,50 +651,65 @@ local function mkTabContent(name)
     f.ScrollBarImageColor3 = C.red
     f.AutomaticCanvasSize = Enum.AutomaticSize.Y
     f.CanvasSize = UDim2.new()
-    f.Visible = name == "Home" -- по умолчанию Home
+    f.Visible = name == "Home"
 
     local colL = Instance.new("Frame", f)
     colL.Size = UDim2.new(0.5, -2, 1, 0)
     colL.BackgroundTransparency = 1
     local llout = Instance.new("UIListLayout", colL)
-    llout.Padding = UDim.new(0, 4); llout.SortOrder = Enum.SortOrder.LayoutOrder
+    llout.Padding = UDim.new(0, 4)
+    llout.SortOrder = Enum.SortOrder.LayoutOrder
     local lpad = Instance.new("UIPadding", colL)
-    lpad.PaddingTop = UDim.new(0, 4); lpad.PaddingLeft = UDim.new(0, 2)
+    lpad.PaddingTop = UDim.new(0, 4)
+    lpad.PaddingLeft = UDim.new(0, 2)
 
     local colR = Instance.new("Frame", f)
     colR.Size = UDim2.new(0.5, -2, 1, 0)
     colR.Position = UDim2.new(0.5, 2, 0, 0)
     colR.BackgroundTransparency = 1
     local rlout = Instance.new("UIListLayout", colR)
-    rlout.Padding = UDim.new(0, 4); rlout.SortOrder = Enum.SortOrder.LayoutOrder
+    rlout.Padding = UDim.new(0, 4)
+    rlout.SortOrder = Enum.SortOrder.LayoutOrder
     local rpad = Instance.new("UIPadding", colR)
-    rpad.PaddingTop = UDim.new(0, 4); rpad.PaddingRight = UDim.new(0, 2)
+    rpad.PaddingTop = UDim.new(0, 4)
+    rpad.PaddingRight = UDim.new(0, 2)
 
     TabContents[name] = f
     return colL, colR
 end
 
 -- ================================================================
+--  ПЕРЕМЕННЫЕ ДЛЯ АИМБОТА
+-- ================================================================
+local aimbotEnabled = false
+local aimbotCircleEnabled = false
+local circleRadius = 50
+local smoothness = 50
+local prediction = 0
+local targetPart = "Head"
+local snowButtonActive = false
+local lockButtonActive = false
+local currentTarget = nil
+local snowButton = nil
+local lockTarget = nil
+
+-- ================================================================
 --  HOME TAB
 -- ================================================================
 local HL, HR = mkTabContent("Home")
 
--- Левая колонка: картинка и информация
 local infoFrame = Instance.new("Frame", HL)
 infoFrame.Size = UDim2.new(1, 0, 0, 0)
 infoFrame.AutomaticSize = Enum.AutomaticSize.Y
 infoFrame.BackgroundTransparency = 1
 
--- Картинка
 local img = Instance.new("ImageLabel", infoFrame)
-img.Size = UDim2.new(1, -10, 0, 100) -- высота подогнана
+img.Size = UDim2.new(1, -10, 0, 100)
 img.Position = UDim2.new(0, 5, 0, 0)
 img.BackgroundTransparency = 1
 img.Image = "rbxassetid://121540865505620"
 img.ScaleType = Enum.ScaleType.Fit
--- чтобы не растягивалось
 
--- Текст с информацией
 local infoText = Instance.new("TextLabel", infoFrame)
 infoText.Size = UDim2.new(1, -10, 0, 80)
 infoText.Position = UDim2.new(0, 5, 0, 110)
@@ -548,74 +727,334 @@ infoText.TextXAlignment = Enum.TextXAlignment.Left
 infoText.TextYAlignment = Enum.TextYAlignment.Top
 infoText.LineHeight = 1.2
 
--- (можно добавить ещё что-то, но пока так)
-
 -- ================================================================
---  COMBAT TAB (с функциями)
+--  COMBAT TAB
 -- ================================================================
 local CL, CR = mkTabContent("Combat")
 
--- Левая колонка: Aimbot тоггл
-local aimSection = mkSection(CL, "Aimbot", 1)
-local aimToggle = mkToggle(aimSection, "Enable Aimbot", false) -- ползунок
+-- Левая колонка
+local aimSection = mkSection(CL, "Aimbot Settings", 1)
 
--- Правая колонка: слайдер размера кружка
-local sizeSection = mkSection(CR, "Circle Size", 1)
-local sizeSlider = mkSlider(sizeSection, "Radius", 1, 200, 50)
+-- Включение аимбота
+local aimToggle, getAim = mkToggle(aimSection, "Enable Aimbot", false, function(val)
+    aimbotEnabled = val
+    if not val then
+        currentTarget = nil
+        lockTarget = nil
+    end
+end)
+
+-- Показ кружка
+local circleToggle, getCircle = mkToggle(aimSection, "Show Circle", false, function(val)
+    aimbotCircleEnabled = val
+end)
+
+-- Слайдер размера кружка
+local circleSlider, getCircleRad = mkSlider(aimSection, "Circle Size", 10, 500, 50, function(val)
+    circleRadius = val
+end)
+
+-- Слайдер Smooth
+local smoothSlider, getSmooth = mkSlider(aimSection, "Smooth", 1, 100, 50, function(val)
+    smoothness = val
+end)
+
+-- Слайдер Prediction
+local predSlider, getPred = mkSlider(aimSection, "Prediction", 0, 100, 0, function(val)
+    prediction = val / 1000
+end)
+
+-- Выбор части тела
+local function mkDropdown(parent, label, options, default)
+    local wrap = Instance.new("Frame", parent)
+    wrap.Size = UDim2.new(1, 0, 0, 28)
+    wrap.BackgroundTransparency = 1
+
+    local lbl = Instance.new("TextLabel", wrap)
+    lbl.Size = UDim2.new(1, -5, 0, 11)
+    lbl.Position = UDim2.new(0, 5, 0, 1)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 7
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local btn = Instance.new("TextButton", wrap)
+    btn.Size = UDim2.new(1, -10, 0, 14)
+    btn.Position = UDim2.new(0, 5, 0, 13)
+    btn.BackgroundColor3 = C.section
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    corner(btn, 2)
+
+    local cur = Instance.new("TextLabel", btn)
+    cur.Size = UDim2.new(1, -16, 1, 0)
+    cur.Position = UDim2.new(0, 5, 0, 0)
+    cur.BackgroundTransparency = 1
+    cur.Text = default
+    cur.TextColor3 = C.text
+    cur.Font = Enum.Font.Gotham
+    cur.TextSize = 7
+    cur.TextXAlignment = Enum.TextXAlignment.Left
+
+    local arr = Instance.new("TextLabel", btn)
+    arr.Size = UDim2.new(0, 12, 1, 0)
+    arr.Position = UDim2.new(1, -14, 0, 0)
+    arr.BackgroundTransparency = 1
+    arr.Text = "∧"
+    arr.TextColor3 = C.dim
+    arr.Font = Enum.Font.GothamBold
+    arr.TextSize = 6
+
+    local idx = 1
+    for i, v in ipairs(options) do
+        if v == default then idx = i end
+    end
+    btn.MouseButton1Click:Connect(function()
+        idx = (idx % #options) + 1
+        cur.Text = options[idx]
+        targetPart = options[idx]
+    end)
+
+    return wrap
+end
+
+mkDropdown(aimSection, "Target Part", {"Head", "Torso", "HumanoidRootPart"}, "Head")
 
 -- ================================================================
---  VISUALS TAB (пустышка, но можно оставить)
+--  VISUALS TAB (ESP)
 -- ================================================================
 local VL, VR = mkTabContent("Visuals")
-local VBody = mkSection(VL, "ESP", 1)
-mkToggle(VBody, "Players", false)
-mkToggle(VBody, "Boxes",   false)
 
--- ================================================================
---  MISC TAB (пустышка)
--- ================================================================
-local ML, MR = mkTabContent("Misc")
-local MBody = mkSection(ML, "Movement", 1)
-mkToggle(MBody, "Speed Hack", false)
+local espSection = mkSection(VL, "ESP Settings", 1)
 
--- ================================================================
---  УСТАНОВКА НАЧАЛЬНОЙ ВКЛАДКИ HOME
--- ================================================================
-setTab("Home")
+local espEnabled = false
+local espToggles = {}
 
--- ================================================================
---  HIDE / SHOW (Insert)
--- ================================================================
-local visible = true
-UIS.InputBegan:Connect(function(i, gpe)
-    if gpe then return end
-    if i.KeyCode == Enum.KeyCode.Insert then
-        visible = not visible
-        Outer.Visible = visible
-        -- скрываем также мобильную кнопку? Покажем всегда, но можно синхронизировать
-        if mobileButton then mobileButton.Visible = visible end
+local espToggle, getEsp = mkToggle(espSection, "Enable ESP", false, function(val)
+    espEnabled = val
+    if val then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP then
+                createESP(player)
+            end
+        end
+    end
+end)
+
+local function getRainbowColor(speed)
+    local frequency = speed or 2
+    local time = tick() * frequency
+    local r = math.sin(time + 0) * 127 + 128
+    local g = math.sin(time + 2) * 127 + 128
+    local b = math.sin(time + 4) * 127 + 128
+    return Color3.fromRGB(r, g, b)
+end
+
+local function checkVisibility(targetCharacter)
+    local localCharacter = LP.Character
+    if not localCharacter or not localCharacter:FindFirstChild("HumanoidRootPart") then return false end
+    if not targetCharacter or not targetCharacter:FindFirstChild("HumanoidRootPart") then return false end
+
+    local origin = Camera.CFrame.Position
+    local destination = targetCharacter.HumanoidRootPart.Position
+
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    raycastParams.FilterDescendantsInstances = {localCharacter, targetCharacter, Camera}
+
+    local result = workspace:Raycast(origin, destination - origin, raycastParams)
+    return result == nil
+end
+
+local espObjects = {}
+
+local function createESP(player)
+    if player == LP then return end
+    if espObjects[player] then return end
+
+    local box = Drawing.new("Square")
+    box.Thickness = 1.5
+    box.Filled = false
+    box.Transparency = 1
+    box.Visible = false
+
+    local hpBg = Drawing.new("Square")
+    hpBg.Thickness = 1
+    hpBg.Filled = true
+    hpBg.Color = Color3.fromRGB(0, 0, 0)
+    hpBg.Transparency = 1
+    hpBg.Visible = false
+
+    local hpBar = Drawing.new("Square")
+    hpBar.Thickness = 1
+    hpBar.Filled = true
+    hpBar.Color = Color3.fromRGB(0, 255, 0)
+    hpBar.Transparency = 1
+    hpBar.Visible = false
+
+    local nameLabel = Drawing.new("Text")
+    nameLabel.Size = 13
+    nameLabel.Center = true
+    nameLabel.Outline = true
+    nameLabel.Transparency = 1
+    nameLabel.Visible = false
+
+    local distLabel = Drawing.new("Text")
+    distLabel.Size = 12
+    distLabel.Center = true
+    distLabel.Outline = true
+    distLabel.Transparency = 1
+    distLabel.Visible = false
+
+    local tracer = Drawing.new("Line")
+    tracer.Thickness = 1.5
+    tracer.Transparency = 1
+    tracer.Visible = false
+
+    espObjects[player] = {box = box, hpBg = hpBg, hpBar = hpBar, nameLabel = nameLabel, distLabel = distLabel, tracer = tracer}
+
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        if not espEnabled or not player:IsDescendantOf(Players) then
+            box.Visible = false
+            hpBg.Visible = false
+            hpBar.Visible = false
+            nameLabel.Visible = false
+            distLabel.Visible = false
+            tracer.Visible = false
+            if not player:IsDescendantOf(Players) then
+                box:Remove()
+                hpBg:Remove()
+                hpBar:Remove()
+                nameLabel:Remove()
+                distLabel:Remove()
+                tracer:Remove()
+                connection:Disconnect()
+                espObjects[player] = nil
+            end
+            return
+        end
+
+        local character = player.Character
+        if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then
+            box.Visible = false
+            hpBg.Visible = false
+            hpBar.Visible = false
+            nameLabel.Visible = false
+            distLabel.Visible = false
+            tracer.Visible = false
+            return
+        end
+
+        local rootPart = character.HumanoidRootPart
+        local humanoid = character.Humanoid
+
+        local headCFrame = rootPart.CFrame * CFrame.new(0, 3, 0)
+        local footCFrame = rootPart.CFrame * CFrame.new(0, -3.5, 0)
+
+        local headPos, headOnScreen = Camera:WorldToViewportPoint(headCFrame.Position)
+        local footPos, footOnScreen = Camera:WorldToViewportPoint(footCFrame.Position)
+        local centerPos, centerOnScreen = Camera:WorldToViewportPoint(rootPart.Position)
+
+        if headOnScreen and footOnScreen and humanoid.Health > 0 then
+            local boxHeight = math.abs(headPos.Y - footPos.Y)
+            local boxWidth = boxHeight * 0.6
+
+            local boxX = headPos.X - (boxWidth / 2)
+            local boxY = headPos.Y
+
+            local rainbow = getRainbowColor(2)
+
+            box.Size = Vector2.new(boxWidth, boxHeight)
+            box.Position = Vector2.new(boxX, boxY)
+            box.Color = rainbow
+            box.Visible = true
+
+            nameLabel.Text = player.Name
+            nameLabel.Position = Vector2.new(centerPos.X, boxY - 16)
+            nameLabel.Color = rainbow
+            nameLabel.Visible = true
+
+            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                local distance = (rootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
+                distLabel.Text = math.floor(distance) .. " studs"
+            else
+                distLabel.Text = "--- studs"
+            end
+            distLabel.Position = Vector2.new(centerPos.X, boxY + boxHeight + 4)
+            distLabel.Color = rainbow
+            distLabel.Visible = true
+
+            local hpHeight = boxHeight * (humanoid.Health / humanoid.MaxHealth)
+            hpBg.Size = Vector2.new(3, boxHeight)
+            hpBg.Position = Vector2.new(boxX - 6, boxY)
+            hpBg.Visible = true
+
+            hpBar.Size = Vector2.new(3, hpHeight)
+            hpBar.Position = Vector2.new(boxX - 6, boxY + (boxHeight - hpHeight))
+            hpBar.Visible = true
+
+            local isVisible = checkVisibility(character)
+            tracer.Color = isVisible and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+            tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+            tracer.To = Vector2.new(headPos.X, headPos.Y)
+            tracer.Visible = true
+        else
+            box.Visible = false
+            hpBg.Visible = false
+            hpBar.Visible = false
+            nameLabel.Visible = false
+            distLabel.Visible = false
+            tracer.Visible = false
+        end
+    end)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    if espEnabled then
+        createESP(player)
     end
 end)
 
 -- ================================================================
---  МОБИЛЬНАЯ КНОПКА (если устройство мобильное)
+--  MISC TAB
+-- ================================================================
+local ML, MR = mkTabContent("Misc")
+
+local moveSection = mkSection(ML, "Movement", 1)
+
+mkToggle(moveSection, "Speed Hack", false)
+mkSlider(moveSection, "Speed Value", 8, 250, 50)
+
+mkToggle(moveSection, "Infinite Jump", false)
+mkToggle(moveSection, "No Clip", false)
+
+-- ================================================================
+--  МОБИЛЬНЫЕ КНОПКИ (Если устройство мобильное)
 -- ================================================================
 local mobileButton = nil
+local snowButtonObj = nil
+local lockButtonObj = nil
+local snowButtonEnabled = false
+local lockButtonEnabled = false
+
 if isMobile() then
     local btnGui = Instance.new("ScreenGui")
-    btnGui.Name = "SinyxWareButton"
+    btnGui.Name = "SinyxWareMobileButtons"
     btnGui.ResetOnSpawn = false
     btnGui.Parent = CG
 
+    -- Кнопка открытия GUI
     mobileButton = Instance.new("ImageButton")
     mobileButton.Size = UDim2.new(0, 50, 0, 50)
     mobileButton.Position = UDim2.new(1, -60, 0.5, -25)
-    mobileButton.Image = "rbxassetid://73073995075962" -- можно заменить на свой ID
+    mobileButton.Image = "rbxassetid://73073995075962"
     mobileButton.BackgroundTransparency = 1
     mobileButton.Parent = btnGui
     mobileButton.ZIndex = 999
 
-    -- Перетаскивание
     local dragMob = {active = false, start = nil, offset = nil}
     mobileButton.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
@@ -641,13 +1080,261 @@ if isMobile() then
         end
     end)
 
-    -- Открытие/закрытие GUI по нажатию
     local function toggleGUI()
         visible = not visible
         Outer.Visible = visible
+        if snowButtonObj then snowButtonObj.Visible = visible end
+        if lockButtonObj then lockButtonObj.Visible = visible end
     end
     mobileButton.MouseButton1Click:Connect(toggleGUI)
     mobileButton.TouchTap:Connect(toggleGUI)
+
+    -- SNOW BUTTON (красная передвигаемая кнопка для включения аимбота)
+    local function createSnowButton()
+        if snowButtonObj then snowButtonObj:Destroy() end
+        snowButtonObj = Instance.new("ImageButton")
+        snowButtonObj.Size = UDim2.new(0, 45, 0, 45)
+        snowButtonObj.Position = UDim2.new(0.1, 0, 0.5, -22)
+        snowButtonObj.Image = "rbxassetid://73073995075962"
+        snowButtonObj.BackgroundColor3 = Color3.fromRGB(220, 50, 100)
+        snowButtonObj.BackgroundTransparency = 0.3
+        snowButtonObj.Parent = btnGui
+        snowButtonObj.ZIndex = 999
+        corner(snowButtonObj, 22)
+
+        local dragSnow = {active = false, start = nil, offset = nil}
+        snowButtonObj.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                dragSnow.active = true
+                dragSnow.start = input.Position
+                dragSnow.offset = snowButtonObj.Position
+            end
+        end)
+        snowButtonObj.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                dragSnow.active = false
+            end
+        end)
+        UIS.InputChanged:Connect(function(input)
+            if dragSnow.active and input.UserInputType == Enum.UserInputType.Touch then
+                local delta = input.Position - dragSnow.start
+                snowButtonObj.Position = UDim2.new(
+                    dragSnow.offset.X.Scale,
+                    dragSnow.offset.X.Offset + delta.X,
+                    dragSnow.offset.Y.Scale,
+                    dragSnow.offset.Y.Offset + delta.Y
+                )
+            end
+        end)
+
+        snowButtonObj.MouseButton1Click:Connect(function()
+            aimbotEnabled = not aimbotEnabled
+            snowButtonObj.BackgroundColor3 = aimbotEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(220, 50, 100)
+        end)
+        snowButtonObj.TouchTap:Connect(function()
+            aimbotEnabled = not aimbotEnabled
+            snowButtonObj.BackgroundColor3 = aimbotEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(220, 50, 100)
+        end)
+    end
+
+    -- LOCK BUTTON (заморозка цели)
+    local function createLockButton()
+        if lockButtonObj then lockButtonObj:Destroy() end
+        lockButtonObj = Instance.new("ImageButton")
+        lockButtonObj.Size = UDim2.new(0, 45, 0, 45)
+        lockButtonObj.Position = UDim2.new(0.8, 0, 0.5, -22)
+        lockButtonObj.Image = "rbxassetid://73073995075962"
+        lockButtonObj.BackgroundColor3 = Color3.fromRGB(220, 50, 100)
+        lockButtonObj.BackgroundTransparency = 0.3
+        lockButtonObj.Parent = btnGui
+        lockButtonObj.ZIndex = 999
+        corner(lockButtonObj, 22)
+
+        local dragLock = {active = false, start = nil, offset = nil}
+        lockButtonObj.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                dragLock.active = true
+                dragLock.start = input.Position
+                dragLock.offset = lockButtonObj.Position
+            end
+        end)
+        lockButtonObj.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                dragLock.active = false
+            end
+        end)
+        UIS.InputChanged:Connect(function(input)
+            if dragLock.active and input.UserInputType == Enum.UserInputType.Touch then
+                local delta = input.Position - dragLock.start
+                lockButtonObj.Position = UDim2.new(
+                    dragLock.offset.X.Scale,
+                    dragLock.offset.X.Offset + delta.X,
+                    dragLock.offset.Y.Scale,
+                    dragLock.offset.Y.Offset + delta.Y
+                )
+            end
+        end)
+
+        lockButtonObj.MouseButton1Click:Connect(function()
+            lockButtonEnabled = not lockButtonEnabled
+            lockButtonObj.BackgroundColor3 = lockButtonEnabled and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(220, 50, 100)
+            if not lockButtonEnabled then
+                lockTarget = nil
+            end
+        end)
+        lockButtonObj.TouchTap:Connect(function()
+            lockButtonEnabled = not lockButtonEnabled
+            lockButtonObj.BackgroundColor3 = lockButtonEnabled and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(220, 50, 100)
+            if not lockButtonEnabled then
+                lockTarget = nil
+            end
+        end)
+    end
+
+    -- Добавляем функции в GUI (в Combat или Misc)
+    local mobileSection = mkSection(CL, "Mobile Controls", 2)
+    local snowToggle, getSnow = mkToggle(mobileSection, "Snow Button", false, function(val)
+        snowButtonEnabled = val
+        if val then
+            createSnowButton()
+        elseif snowButtonObj then
+            snowButtonObj:Destroy()
+            snowButtonObj = nil
+        end
+    end)
+
+    local lockToggle, getLock = mkToggle(mobileSection, "Lock Button", false, function(val)
+        lockButtonEnabled = val
+        if val then
+            createLockButton()
+        elseif lockButtonObj then
+            lockButtonObj:Destroy()
+            lockButtonObj = nil
+        end
+    end)
 end
 
-print("[RusHack] ✓ Insert = скрыть/показать, мобильная кнопка активна")
+-- ================================================================
+--  АИМБОТ ЛОГИКА (через RenderStepped)
+-- ================================================================
+local function getTargetPart(character)
+    if targetPart == "Head" then
+        return character:FindFirstChild("Head")
+    elseif targetPart == "Torso" then
+        return character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+    else
+        return character:FindFirstChild("HumanoidRootPart")
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if not aimbotEnabled then return end
+
+    local localChar = LP.Character
+    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return end
+
+    local camera = workspace.CurrentCamera
+    local mousePos = UIS:GetMouseLocation()
+    local screenCenter = camera.ViewportSize / 2
+
+    local closestDist = circleRadius
+    local closestPlayer = nil
+    local closestPart = nil
+
+    -- Если есть залоченная цель
+    if lockButtonEnabled and lockTarget and lockTarget.Parent and lockTarget.Parent:FindFirstChild("Humanoid") then
+        local part = getTargetPart(lockTarget.Parent)
+        if part and part:IsDescendantOf(workspace) then
+            closestPlayer = lockTarget.Parent
+            closestPart = part
+        else
+            lockTarget = nil
+        end
+    end
+
+    -- Поиск цели
+    if not closestPlayer then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local char = player.Character
+                local humanoid = char:FindFirstChild("Humanoid")
+                if humanoid and humanoid.Health > 0 then
+                    local part = getTargetPart(char)
+                    if part then
+                        local pos, onScreen = camera:WorldToViewportPoint(part.Position)
+                        if onScreen then
+                            local dist = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
+                            if dist < closestDist then
+                                closestDist = dist
+                                closestPlayer = player
+                                closestPart = part
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if closestPlayer and closestPart then
+        local targetPos = closestPart.Position
+
+        -- Prediction
+        local velocity = closestPart.Velocity or Vector3.new()
+        targetPos = targetPos + (velocity * prediction)
+
+        local screenPos, onScreen = camera:WorldToViewportPoint(targetPos)
+        if onScreen then
+            local smoothFactor = smoothness / 100
+            local targetScreen = Vector2.new(screenPos.X, screenPos.Y)
+            local currentMouse = UIS:GetMouseLocation()
+            local newMouse = currentMouse:Lerp(targetScreen, math.min(smoothFactor, 1))
+
+            if smoothFactor >= 0.99 then
+                mousemoverel(targetScreen.X - currentMouse.X, targetScreen.Y - currentMouse.Y)
+            else
+                mousemoverel(newMouse.X - currentMouse.X, newMouse.Y - currentMouse.Y)
+            end
+
+            if lockButtonEnabled then
+                lockTarget = closestPart
+            else
+                currentTarget = closestPlayer
+            end
+        end
+    end
+
+    -- Рисуем круг
+    if aimbotCircleEnabled then
+        -- Используем Drawing API для круга
+        local circle = Drawing.new("Circle")
+        circle.Radius = circleRadius
+        circle.Position = screenCenter
+        circle.Thickness = 2
+        circle.Color = Color3.fromRGB(220, 50, 100)
+        circle.Transparency = 1
+        circle.Visible = true
+        circle.Filled = false
+        circle.NumSides = 60
+        task.wait()
+        circle:Remove()
+    end
+end)
+
+-- ================================================================
+--  HIDE / SHOW
+-- ================================================================
+local visible = true
+UIS.InputBegan:Connect(function(i, gpe)
+    if gpe then return end
+    if i.KeyCode == Enum.KeyCode.Insert then
+        visible = not visible
+        Outer.Visible = visible
+        if mobileButton then mobileButton.Visible = visible end
+        if snowButtonObj then snowButtonObj.Visible = visible end
+        if lockButtonObj then lockButtonObj.Visible = visible end
+    end
+end)
+
+setTab("Home")
+print("[SinyxWare] ✓ Insert = скрыть/показать | Мобильные кнопки активны")
