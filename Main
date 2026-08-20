@@ -1,6 +1,6 @@
 -- ================================================================
---  SINYXWARE GUI v8 | VISUALS UPDATE + MOBILE AIMBOT FIX
---  РђРІС‚РѕСЂ: GothbreachHelper
+--  SINYXWARE GUI v9 | FULL FIXED + WALL CHECK + FOG + PULSE
+--  Автор: GothbreachHelper
 -- ================================================================
 
 local UIS = game:GetService("UserInputService")
@@ -12,15 +12,16 @@ local LP = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
+local Mouse = LP:GetMouse()
 
 -- ================================================================
---  Р—РђР©РРўРђ РћРў Р”РЈР‘Р›РР РћР’РђРќРРЇ
+--  ЗАЩИТА ОТ ДУБЛИРОВАНИЯ
 -- ================================================================
 pcall(function() CG:FindFirstChild("SinyxWare_Main"):Destroy() end)
 pcall(function() CG:FindFirstChild("SinyxWareMobileButtons"):Destroy() end)
 
 -- ================================================================
---  РћРџР Р•Р”Р•Р›Р•РќРР• РЈРЎРўР РћР™РЎРўР’Рђ
+--  ОПРЕДЕЛЕНИЕ УСТРОЙСТВА
 -- ================================================================
 local function isMobile()
     return UIS.TouchEnabled and not UIS.MouseEnabled
@@ -28,7 +29,7 @@ end
 local deviceType = isMobile() and "Mobile" or "PC"
 
 -- ================================================================
---  Р”Р•РўР•РљРўРћР  Р­РљР—Р•РљРЈРўРћР Рђ
+--  ДЕТЕКТОР ЭКЗЕКУТОРА
 -- ================================================================
 local function DetectExecutor()
     if identifyexecutor then
@@ -51,7 +52,7 @@ end
 local currentExecutor = DetectExecutor()
 
 -- ================================================================
---  РЈР’Р•Р”РћРњР›Р•РќРР• РџР Р РРќР–Р•РљРўР•
+--  УВЕДОМЛЕНИЕ ПРИ ИНЖЕКТЕ
 -- ================================================================
 task.spawn(function()
     local old_notif = CG:FindFirstChild("SinyxWare_Notification_Fixed_Tight")
@@ -151,7 +152,7 @@ task.spawn(function()
     SubLabel.Size = UDim2.new(1, -20, 0, 16)
     SubLabel.Position = UDim2.new(0, 12, 0, 26)
     SubLabel.BackgroundTransparency = 1
-    SubLabel.Text = "press Insert (PC) / button (Mobile) to open"
+    SubLabel.Text = "press Insert to open/close"
     SubLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     SubLabel.TextSize = 11
     SubLabel.Font = Enum.Font.SourceSansItalic
@@ -181,7 +182,7 @@ task.spawn(function()
 end)
 
 -- ================================================================
---  Р¦Р’Р•РўРђ
+--  ЦВЕТА
 -- ================================================================
 local C = {
     bg       = Color3.fromRGB(30, 15, 25),
@@ -201,7 +202,7 @@ local C = {
 }
 
 -- ================================================================
---  РЎРћР—Р”РђРќРР• Р“Р›РђР’РќРћР“Рћ GUI
+--  СОЗДАНИЕ ГЛАВНОГО GUI
 -- ================================================================
 local Root = Instance.new("ScreenGui")
 Root.Name = "SinyxWare_Main"
@@ -266,7 +267,7 @@ UIS.InputChanged:Connect(function(i)
 end)
 
 -- ================================================================
---  РЎРђР™Р”Р‘РђР 
+--  САЙДБАР
 -- ================================================================
 local Sidebar = Instance.new("Frame", Main)
 Sidebar.Size = UDim2.new(0, SW, 1, 0)
@@ -304,11 +305,11 @@ TDiv.BackgroundColor3 = C.border
 TDiv.BorderSizePixel = 0
 
 local TABS = {
-    { n = "Home",    ico = "вЊ‚" },
-    { n = "Combat",  ico = "вњ–" },
-    { n = "Visuals", ico = "в—Ћ" },
-    { n = "Misc",    ico = "в—‰" },
-    { n = "Config",  ico = "вљ™" },
+    { n = "Home",    ico = "⌂" },
+    { n = "Combat",  ico = "✖" },
+    { n = "Visuals", ico = "◎" },
+    { n = "Misc",    ico = "◉" },
+    { n = "Config",  ico = "⚙" },
 }
 
 local TabBtns = {}
@@ -376,7 +377,7 @@ for i, tab in ipairs(TABS) do
 end
 
 -- ================================================================
---  РљРћРќРўР•РќРў
+--  КОНТЕНТ
 -- ================================================================
 local ContentArea = Instance.new("Frame", Main)
 ContentArea.Size = UDim2.new(1, -SW-1, 1, -14)
@@ -398,7 +399,7 @@ local SearchIco = Instance.new("TextLabel", TopBar)
 SearchIco.Size = UDim2.new(0, 14, 1, 0)
 SearchIco.Position = UDim2.new(0, 4, 0, 0)
 SearchIco.BackgroundTransparency = 1
-SearchIco.Text = "рџ”Ќ"
+SearchIco.Text = "🔍"
 SearchIco.TextSize = 7
 SearchIco.TextColor3 = C.dim
 
@@ -419,7 +420,7 @@ local MoveIco = Instance.new("TextLabel", TopBar)
 MoveIco.Size = UDim2.new(0, 14, 0, 14)
 MoveIco.Position = UDim2.new(1, -17, 0.5, -7)
 MoveIco.BackgroundColor3 = C.section
-MoveIco.Text = "вњ›"
+MoveIco.Text = "✛"
 MoveIco.TextSize = 7
 MoveIco.TextColor3 = C.dim
 MoveIco.Font = Enum.Font.GothamBold
@@ -452,14 +453,14 @@ BotDiv.BorderSizePixel = 0
 local BotLbl = Instance.new("TextLabel", BotBar)
 BotLbl.Size = UDim2.new(1, 0, 1, 0)
 BotLbl.BackgroundTransparency = 1
-BotLbl.Text = "SinyxWare v8"
+BotLbl.Text = "SinyxWare v9"
 BotLbl.TextColor3 = C.dim
 BotLbl.Font = Enum.Font.Gotham
 BotLbl.TextSize = 7
 BotLbl.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ================================================================
---  РҐР•Р›РџР•Р Р«
+--  ХЕЛПЕРЫ
 -- ================================================================
 local function corner(f, r)
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2)
@@ -619,7 +620,7 @@ local function mkDropdown(parent, label, options, default, callback)
     arr.Size = UDim2.new(0, 12, 1, 0)
     arr.Position = UDim2.new(1, -14, 0, 0)
     arr.BackgroundTransparency = 1
-    arr.Text = "в€§"
+    arr.Text = "∧"
     arr.TextColor3 = C.dim
     arr.Font = Enum.Font.GothamBold
     arr.TextSize = 6
@@ -666,7 +667,7 @@ local function mkSection(parent, title, lo)
     chevron.Size = UDim2.new(0, 16, 1, 0)
     chevron.Position = UDim2.new(1, -18, 0, 0)
     chevron.BackgroundTransparency = 1
-    chevron.Text = "в€Ё"
+    chevron.Text = "∨"
     chevron.TextColor3 = C.dim
     chevron.Font = Enum.Font.GothamBold
     chevron.TextSize = 8
@@ -692,7 +693,7 @@ local function mkSection(parent, title, lo)
     chevron.MouseButton1Click:Connect(function()
         collapsed = not collapsed
         body.Visible = not collapsed
-        chevron.Text = collapsed and ">" or "в€Ё"
+        chevron.Text = collapsed and ">" or "∨"
     end)
 
     return body
@@ -736,7 +737,7 @@ local function mkTabContent(name)
 end
 
 -- ================================================================
---  РџР•Р Р•РњР•РќРќР«Р•
+--  ПЕРЕМЕННЫЕ
 -- ================================================================
 -- Aimbot
 local aimbotEnabled = false
@@ -747,6 +748,7 @@ local prediction = 0
 local targetPart = "Head"
 local lockTarget = nil
 local lockButtonEnabled = false
+local wallCheckEnabled = false
 
 -- ESP
 local espEnabled = false
@@ -755,6 +757,7 @@ local espShowName = true
 local espShowHP = true
 local espShowDist = true
 local espShowTracer = true
+local hasDrawing = pcall(function() return Drawing end)
 
 -- Misc
 local speedHackEnabled = false
@@ -768,23 +771,28 @@ local originalJumpPower = 50
 local auraEnabled = false
 local skyboxEnabled = false
 local particlesEnabled = false
-local particleMultiplier = 5   -- 5 = 0.05 delay (default)
+local particleMultiplier = 5
+local fogEnabled = false
+local fogDistance = 500
+local pulseEnabled = false
+local pulseSize = 5
 local activeEmitters = {}
 local auraCharacter = LP.Character or LP.CharacterAdded:Wait()
 local galaxySkyObj = nil
 local ParticleFolder = nil
+local pulseObject = nil
 
 -- Mobile
 local snowButtonEnabled = false
 local snowButtonObj = nil
 local lockButtonObj = nil
+local mobileButton = nil
 
 -- GUI
 local visible = true
-local mobileButton = nil
 
 -- ================================================================
---  VISUAL Р¤РЈРќРљР¦РР
+--  VISUAL ФУНКЦИИ
 -- ================================================================
 
 -- ---- AURA ----
@@ -816,6 +824,9 @@ local function applyPerfectAura(part)
 end
 
 local function setupAura()
+    for _, emitter in pairs(activeEmitters) do
+        pcall(function() emitter:Destroy() end)
+    end
     activeEmitters = {}
     local char = LP.Character
     if not char then return end
@@ -829,9 +840,7 @@ end
 
 local function removeAura()
     for _, emitter in pairs(activeEmitters) do
-        if emitter and emitter.Parent then
-            emitter:Destroy()
-        end
+        pcall(function() emitter:Destroy() end)
     end
     activeEmitters = {}
 end
@@ -883,9 +892,70 @@ local function removeSkybox()
     end
 end
 
+-- ---- FOG ----
+local function applyFog()
+    if fogEnabled then
+        Lighting.FogEnd = fogDistance
+        Lighting.FogStart = fogDistance * 0.1
+        Lighting.FogColor = Color3.fromRGB(200, 150, 200)
+        Lighting.Fog = true
+    end
+end
+
+local function removeFog()
+    Lighting.Fog = false
+end
+
+-- ---- PULSE ----
+local function createPulse()
+    if pulseObject then
+        pulseObject:Destroy()
+        pulseObject = nil
+    end
+    if not pulseEnabled then return end
+    
+    pulseObject = Instance.new("Part")
+    pulseObject.Name = "PulseEffect"
+    pulseObject.Anchored = true
+    pulseObject.CanCollide = false
+    pulseObject.Material = Enum.Material.Neon
+    pulseObject.Shape = Enum.PartType.Ball
+    pulseObject.Color = Color3.fromRGB(255, 100, 200)
+    pulseObject.Transparency = 0.5
+    pulseObject.Size = Vector3.new(pulseSize, pulseSize, pulseSize)
+    pulseObject.Parent = workspace
+    
+    local char = LP.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        pulseObject.Position = char.HumanoidRootPart.Position
+    end
+end
+
+local function updatePulse()
+    if pulseObject then
+        pulseObject.Size = Vector3.new(pulseSize, pulseSize, pulseSize)
+    end
+end
+
+local function removePulse()
+    if pulseObject then
+        pulseObject:Destroy()
+        pulseObject = nil
+    end
+end
+
+-- Pulse position update
+RunService.RenderStepped:Connect(function()
+    if pulseEnabled and pulseObject then
+        local char = LP.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            pulseObject.Position = char.HumanoidRootPart.Position
+        end
+    end
+end)
+
 -- ---- PARTICLES ----
 local function getParticleDelay()
-    -- multiplier 1 = 0.25s, 5 = 0.05s, 10 = 0.025s
     return 0.25 / particleMultiplier
 end
 
@@ -946,14 +1016,24 @@ task.spawn(function()
 end)
 
 -- ================================================================
---  РљРћРќР¤РР“Р
+--  КОНФИГИ (ПОЛНОСТЬЮ ПЕРЕРАБОТАНЫ)
 -- ================================================================
-local Configs = {}
-local currentConfigName = "Default"
 local configDir = "SinyxWare_Configs"
+local configCache = {}
 
 local function ensureConfigFolder()
     if not isfolder(configDir) then makefolder(configDir) end
+end
+
+local function getConfigList()
+    ensureConfigFolder()
+    local files = listfiles(configDir)
+    local names = {}
+    for _, file in ipairs(files) do
+        local name = file:match("([^/\\]+)%.json$")
+        if name then table.insert(names, name) end
+    end
+    return names
 end
 
 local function saveConfig(name)
@@ -965,7 +1045,8 @@ local function saveConfig(name)
             circleRadius = circleRadius,
             smoothness = smoothness,
             prediction = prediction,
-            targetPart = targetPart
+            targetPart = targetPart,
+            wallCheck = wallCheckEnabled
         },
         esp = {
             enabled = espEnabled,
@@ -985,17 +1066,32 @@ local function saveConfig(name)
             auraEnabled = auraEnabled,
             skyboxEnabled = skyboxEnabled,
             particlesEnabled = particlesEnabled,
-            particleMultiplier = particleMultiplier
+            particleMultiplier = particleMultiplier,
+            fogEnabled = fogEnabled,
+            fogDistance = fogDistance,
+            pulseEnabled = pulseEnabled,
+            pulseSize = pulseSize
         }
     }
-    writefile(configDir .. "/" .. name .. ".json", HttpService:JSONEncode(config))
+    local path = configDir .. "/" .. name .. ".json"
+    writefile(path, HttpService:JSONEncode(config))
+    configCache[name] = config
     print("[SinyxWare] Config saved: " .. name)
+    return true
 end
 
 local function loadConfig(name)
     local path = configDir .. "/" .. name .. ".json"
-    if not isfile(path) then return false end
-    local config = HttpService:JSONDecode(readfile(path))
+    if not isfile(path) then 
+        print("[SinyxWare] Config not found: " .. name)
+        return false 
+    end
+    
+    local json = readfile(path)
+    local config = HttpService:JSONDecode(json)
+    configCache[name] = config
+    
+    -- Aimbot
     if config.aimbot then
         aimbotEnabled = config.aimbot.enabled or false
         aimbotCircleEnabled = config.aimbot.circleEnabled or false
@@ -1003,7 +1099,10 @@ local function loadConfig(name)
         smoothness = config.aimbot.smoothness or 50
         prediction = config.aimbot.prediction or 0
         targetPart = config.aimbot.targetPart or "Head"
+        wallCheckEnabled = config.aimbot.wallCheck or false
     end
+    
+    -- ESP
     if config.esp then
         espEnabled = config.esp.enabled or false
         espShowBox = config.esp.showBox ~= false
@@ -1012,40 +1111,111 @@ local function loadConfig(name)
         espShowDist = config.esp.showDist ~= false
         espShowTracer = config.esp.showTracer ~= false
     end
+    
+    -- Misc
     if config.misc then
         speedHackEnabled = config.misc.speedEnabled or false
         speedValue = config.misc.speedValue or 50
         infJumpEnabled = config.misc.infJumpEnabled or false
         noClipEnabled = config.misc.noClipEnabled or false
     end
+    
+    -- Visuals
     if config.visuals then
         auraEnabled = config.visuals.auraEnabled or false
         skyboxEnabled = config.visuals.skyboxEnabled or false
         particlesEnabled = config.visuals.particlesEnabled or false
         particleMultiplier = config.visuals.particleMultiplier or 5
+        fogEnabled = config.visuals.fogEnabled or false
+        fogDistance = config.visuals.fogDistance or 500
+        pulseEnabled = config.visuals.pulseEnabled or false
+        pulseSize = config.visuals.pulseSize or 5
     end
+    
+    -- Применяем загруженные настройки
+    applyLoadedSettings()
+    
     print("[SinyxWare] Config loaded: " .. name)
     return true
-end
-
-local function getConfigList()
-    ensureConfigFolder()
-    local files = listfiles(configDir)
-    local names = {}
-    for _, file in ipairs(files) do
-        local name = file:match("([^/\\]+)%.json$")
-        if name then table.insert(names, name) end
-    end
-    return names
 end
 
 local function deleteConfig(name)
     local path = configDir .. "/" .. name .. ".json"
     if isfile(path) then
         delfile(path)
+        configCache[name] = nil
+        print("[SinyxWare] Config deleted: " .. name)
         return true
     end
     return false
+end
+
+local function applyLoadedSettings()
+    -- Применяем Aimbot
+    if aimbotEnabled then
+        -- Аимбот уже включен через переменную
+    end
+    
+    -- Применяем ESP
+    if espEnabled then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LP then createESP(player) end
+        end
+    end
+    
+    -- Применяем Visuals
+    if auraEnabled then
+        setupAura()
+    else
+        removeAura()
+    end
+    
+    if skyboxEnabled then
+        applySkybox()
+    else
+        removeSkybox()
+    end
+    
+    if particlesEnabled then
+        -- Particles already running in loop
+    end
+    
+    if fogEnabled then
+        applyFog()
+    else
+        removeFog()
+    end
+    
+    if pulseEnabled then
+        createPulse()
+    else
+        removePulse()
+    end
+    
+    -- Применяем Misc
+    if speedHackEnabled then
+        local char = LP.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = speedValue
+        end
+    end
+    
+    if infJumpEnabled then
+        local char = LP.Character
+        if char and char:FindFirstChild("Humanoid") then
+            originalJumpPower = char.Humanoid.JumpPower
+            char.Humanoid.JumpPower = 9999
+        end
+    end
+    
+    if noClipEnabled then
+        local char = LP.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end
+    end
 end
 
 -- ================================================================
@@ -1096,6 +1266,10 @@ local circleToggle, getCircle = mkToggle(aimSection, "Show Circle", false, funct
     aimbotCircleEnabled = val
 end)
 
+local wallToggle, getWall = mkToggle(aimSection, "Wall Check", false, function(val)
+    wallCheckEnabled = val
+end)
+
 local circleSlider, getCircleRad = mkSlider(aimSection, "Circle Size", 10, 500, 50, function(val)
     circleRadius = val
 end)
@@ -1112,7 +1286,7 @@ local partDropdown, getPart = mkDropdown(aimSection, "Target Part", {"Head", "To
     targetPart = val
 end)
 
--- Mobile Controls СЃРµРєС†РёСЏ
+-- Mobile Controls
 if isMobile() then
     local mobileSection = mkSection(CL, "Mobile Controls", 2)
 
@@ -1142,12 +1316,12 @@ end
 -- ================================================================
 local VL, VR = mkTabContent("Visuals")
 
--- Р›РµРІС‹Р№ СЃС‚РѕР»Р±РёРє: ESP
+-- Левый столбик: ESP
 local espSection = mkSection(VL, "ESP Settings", 1)
 
 local espToggle, getEsp = mkToggle(espSection, "Enable ESP", false, function(val)
-    espEnabled = val
-    if val then
+    espEnabled = val and hasDrawing
+    if val and hasDrawing then
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LP then createESP(player) end
         end
@@ -1174,9 +1348,11 @@ local tracerToggle, getTracer = mkToggle(espSection, "Show Tracers", true, funct
     espShowTracer = val
 end)
 
--- РџСЂР°РІС‹Р№ СЃС‚РѕР»Р±РёРє: Aura / Skybox / Particles
-local auraSection = mkSection(VR, "Aura", 1)
-mkToggle(auraSection, "Enable Aura", false, function(val)
+-- Правый столбик: Visuals
+local visualSection = mkSection(VR, "Visual Effects", 1)
+
+-- Aura
+local auraToggle, getAura = mkToggle(visualSection, "Player Aura", false, function(val)
     auraEnabled = val
     if val then
         setupAura()
@@ -1185,8 +1361,8 @@ mkToggle(auraSection, "Enable Aura", false, function(val)
     end
 end)
 
-local skyboxSection = mkSection(VR, "Skybox", 2)
-mkToggle(skyboxSection, "Pink Skybox", false, function(val)
+-- Skybox
+local skyToggle, getSky = mkToggle(visualSection, "Pink Skybox", false, function(val)
     skyboxEnabled = val
     if val then
         applySkybox()
@@ -1195,16 +1371,49 @@ mkToggle(skyboxSection, "Pink Skybox", false, function(val)
     end
 end)
 
-local particlesSection = mkSection(VR, "Particles", 3)
-mkToggle(particlesSection, "Enable Particles", false, function(val)
+-- Fog
+local fogToggle, getFog = mkToggle(visualSection, "Custom Fog", false, function(val)
+    fogEnabled = val
+    if val then
+        applyFog()
+    else
+        removeFog()
+    end
+end)
+
+local fogSlider, getFogDist = mkSlider(visualSection, "Fog Distance", 100, 10000, 500, function(val)
+    fogDistance = val
+    if fogEnabled then
+        applyFog()
+    end
+end)
+
+-- Pulse
+local pulseToggle, getPulse = mkToggle(visualSection, "Pulse Effect", false, function(val)
+    pulseEnabled = val
+    if val then
+        createPulse()
+    else
+        removePulse()
+    end
+end)
+
+local pulseSlider, getPulseSize = mkSlider(visualSection, "Pulse Size", 1, 30, 5, function(val)
+    pulseSize = val
+    updatePulse()
+end)
+
+-- Particles
+local particlesToggle, getParticles = mkToggle(visualSection, "Particles", false, function(val)
     particlesEnabled = val
 end)
-mkSlider(particlesSection, "Multiplier (x)", 1, 10, 5, function(val)
+
+local particlesSlider, getParticleMult = mkSlider(visualSection, "Spawn Multiplier", 1, 10, 5, function(val)
     particleMultiplier = val
 end)
 
 -- ================================================================
---  ESP Р›РћР“РРљРђ
+--  ESP ЛОГИКА
 -- ================================================================
 local function getRainbowColor(speed)
     local t = tick() * (speed or 2)
@@ -1231,6 +1440,7 @@ end
 local espObjects = {}
 
 function createESP(player)
+    if not hasDrawing then return end
     if player == LP then return end
     if espObjects[player] then return end
 
@@ -1325,10 +1535,11 @@ function createESP(player)
 end
 
 Players.PlayerAdded:Connect(function(player)
-    if espEnabled then createESP(player) end
+    if espEnabled and hasDrawing then createESP(player) end
 end)
+
 for _, player in ipairs(Players:GetPlayers()) do
-    if espEnabled and player ~= LP then createESP(player) end
+    if espEnabled and hasDrawing and player ~= LP then createESP(player) end
 end
 
 -- ================================================================
@@ -1435,7 +1646,7 @@ local function createButton(parent, text, pos, callback)
     return btn
 end
 
-local listScrolling -- forward declare for updateConfigList
+local listScrolling
 
 local function updateConfigList()
     if not listScrolling then return end
@@ -1467,7 +1678,7 @@ end)
 
 createButton(btnRow, "Load", 0.35, function()
     local name = nameInput.Text:gsub("%s+", "_")
-    if name ~= "" then loadConfig(name) end
+    if name ~= "" then loadConfig(name); updateConfigList() end
 end)
 
 createButton(btnRow, "Delete", 0.7, function()
@@ -1497,7 +1708,7 @@ listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 updateConfigList()
 
 -- ================================================================
---  РђРРњР‘РћРў Р›РћР“РРљРђ (PC + MOBILE FIXED)
+--  АИМБОТ ЛОГИКА (С WALL CHECK И ФИКСАМИ)
 -- ================================================================
 local function getTargetPart(character)
     if targetPart == "Head" then
@@ -1509,11 +1720,25 @@ local function getTargetPart(character)
     end
 end
 
+local function wallCheck(targetPos)
+    if not wallCheckEnabled then return true end
+    local char = LP.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return true end
+    
+    local origin = char.HumanoidRootPart.Position
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {char, Camera}
+    
+    local result = workspace:Raycast(origin, targetPos - origin, params)
+    return result == nil
+end
+
 local aimbotCircle = nil
 
 RunService.RenderStepped:Connect(function()
     -- Circle draw
-    if aimbotCircleEnabled and visible then
+    if aimbotCircleEnabled and visible and hasDrawing then
         if not aimbotCircle then
             aimbotCircle = Drawing.new("Circle")
             aimbotCircle.Thickness = 2
@@ -1537,12 +1762,14 @@ RunService.RenderStepped:Connect(function()
     local screenCenter = Camera.ViewportSize / 2
     local closestDist = circleRadius
     local closestPart = nil
+    local closestPlayer = nil
 
     -- Locked target
     if lockButtonEnabled and lockTarget and lockTarget.Parent then
         local pos, onScreen = Camera:WorldToViewportPoint(lockTarget.Position)
-        if onScreen then
+        if onScreen and wallCheck(lockTarget.Position) then
             closestPart = lockTarget
+            closestPlayer = lockTarget.Parent
         else
             lockTarget = nil
         end
@@ -1560,9 +1787,13 @@ RunService.RenderStepped:Connect(function()
                         local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
                         if onScreen then
                             local dist = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
-                            if dist < closestDist then
-                                closestDist = dist
-                                closestPart = part
+                            if dist < closestDist and dist < circleRadius then
+                                -- Wall check
+                                if wallCheck(part.Position) then
+                                    closestDist = dist
+                                    closestPart = part
+                                    closestPlayer = player
+                                end
                             end
                         end
                     end
@@ -1571,7 +1802,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    if closestPart then
+    if closestPart and closestPlayer then
         local targetPos = closestPart.Position
         if prediction > 0 then
             local vel = closestPart.AssemblyLinearVelocity or Vector3.new()
@@ -1581,26 +1812,25 @@ RunService.RenderStepped:Connect(function()
         local smoothFactor = smoothness / 100
 
         if isMobile() then
-            -- ============ MOBILE AIMBOT FIX ============
-            -- РќР° РјРѕР±РёР»Рµ РЅРµС‚ РјС‹С€Рё, СѓРїСЂР°РІР»СЏРµРј РєР°РјРµСЂРѕР№ РЅР°РїСЂСЏРјСѓСЋ
+            -- Mobile aimbot
             local lookCF = CFrame.new(Camera.CFrame.Position, targetPos)
             local alpha = math.clamp(smoothFactor * 0.4, 0.05, 1.0)
             Camera.CFrame = Camera.CFrame:Lerp(lookCF, alpha)
-            -- ==========================================
         else
-            -- ============ PC AIMBOT ============
+            -- PC aimbot
             local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
             if onScreen then
-                if smoothFactor >= 0.95 then
-                    mousemoverel(screenPos.X - screenCenter.X, screenPos.Y - screenCenter.Y)
-                else
-                    local currentMouse = UIS:GetMouseLocation()
-                    local targetScreen = Vector2.new(screenPos.X, screenPos.Y)
-                    local newMouse = currentMouse:Lerp(targetScreen, smoothFactor)
-                    mousemoverel(newMouse.X - currentMouse.X, newMouse.Y - currentMouse.Y)
-                end
+                pcall(function()
+                    if smoothFactor >= 0.95 then
+                        mousemoverel(screenPos.X - screenCenter.X, screenPos.Y - screenCenter.Y)
+                    else
+                        local currentMouse = UIS:GetMouseLocation()
+                        local targetScreen = Vector2.new(screenPos.X, screenPos.Y)
+                        local newMouse = currentMouse:Lerp(targetScreen, smoothFactor)
+                        mousemoverel(newMouse.X - currentMouse.X, newMouse.Y - currentMouse.Y)
+                    end
+                end)
             end
-            -- ===================================
         end
 
         if lockButtonEnabled then
@@ -1610,7 +1840,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================================
---  MISC Р›РћР“РРљРђ
+--  MISC ЛОГИКА
 -- ================================================================
 LP.CharacterAdded:Connect(function(char)
     task.wait(0.5)
@@ -1627,6 +1857,9 @@ LP.CharacterAdded:Connect(function(char)
             if part:IsA("BasePart") then part.CanCollide = false end
         end
     end
+    if auraEnabled then
+        setupAura()
+    end
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -1640,8 +1873,26 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- Infinite jump handler
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if infJumpEnabled and input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.Space then
+            local char = LP.Character
+            if char and char:FindFirstChild("Humanoid") then
+                local humanoid = char.Humanoid
+                if humanoid:GetState() == Enum.HumanoidStateType.Landed then
+                    humanoid.Jump = true
+                    task.wait(0.1)
+                    humanoid.Jump = false
+                end
+            end
+        end
+    end
+end)
+
 -- ================================================================
---  РњРћР‘РР›Р¬РќР«Р• РљРќРћРџРљР
+--  МОБИЛЬНЫЕ КНОПКИ (ФИКС - ТОЛЬКО 1 КНОПКА)
 -- ================================================================
 function createSnowButton()
     if snowButtonObj then snowButtonObj:Destroy() end
@@ -1746,7 +1997,7 @@ function createLockButton()
 end
 
 -- ================================================================
---  РњРћР‘РР›Р¬РќРђРЇ РљРќРћРџРљРђ РћРўРљР Р«РўРРЇ GUI
+--  МОБИЛЬНАЯ КНОПКА ОТКРЫТИЯ GUI
 -- ================================================================
 if isMobile() then
     local btnGui = CG:FindFirstChild("SinyxWareMobileButtons")
@@ -1794,6 +2045,7 @@ if isMobile() then
         if snowButtonObj then snowButtonObj.Visible = visible end
         if lockButtonObj then lockButtonObj.Visible = visible end
         if aimbotCircle then aimbotCircle.Visible = visible and aimbotCircleEnabled end
+        if pulseObject then pulseObject.Visible = visible end
     end
     mobileButton.MouseButton1Click:Connect(toggleGUI)
     mobileButton.TouchTap:Connect(toggleGUI)
@@ -1811,10 +2063,14 @@ UIS.InputBegan:Connect(function(i, gpe)
         if snowButtonObj then snowButtonObj.Visible = visible end
         if lockButtonObj then lockButtonObj.Visible = visible end
         if aimbotCircle then aimbotCircle.Visible = visible and aimbotCircleEnabled end
+        if pulseObject then pulseObject.Visible = visible end
     end
 end)
 
 setTab("Home")
-print("[SinyxWare v8] вњ“ Loaded | Insert = СЃРєСЂС‹С‚СЊ/РїРѕРєР°Р·Р°С‚СЊ")
-print("[SinyxWare v8] вњ“ Visuals: Aura, Skybox, Particles РґРѕР±Р°РІР»РµРЅС‹")
-print("[SinyxWare v8] вњ“ Mobile Aimbot: Camera CFrame mode")
+print("[SinyxWare v9] ✓ Loaded | Insert = скрыть/показать")
+print("[SinyxWare v9] ✓ Добавлен Wall Check для аимбота")
+print("[SinyxWare v9] ✓ Добавлен Fog с настройкой расстояния")
+print("[SinyxWare v9] ✓ Добавлен Pulse Effect (розовый шар)")
+print("[SinyxWare v9] ✓ Конфиги полностью переработаны")
+print("[SinyxWare v9] ✓ Исправлены мобильные кнопки")
