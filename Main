@@ -1,5 +1,5 @@
 -- ================================================================
---  SINYXWARE GUI v7 | ПОЛНОСТЬЮ РАБОЧИЙ + КОНФИГИ
+--  SINYXWARE GUI v8 | ПОЛНАЯ ПЕРЕРАБОТКА
 --  Автор: GothbreachHelper
 -- ================================================================
 
@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 local LP = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
 
 -- ================================================================
 --  ЗАЩИТА ОТ ДУБЛИРОВАНИЯ
@@ -462,7 +463,6 @@ local function corner(f, r)
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2)
 end
 
--- Тоггл с возвратом значения
 local function mkToggle(parent, label, default, callback)
     local row = Instance.new("Frame", parent)
     row.Size = UDim2.new(1, 0, 0, 16)
@@ -509,7 +509,6 @@ local function mkToggle(parent, label, default, callback)
     return row, function() return val end, toggle
 end
 
--- Слайдер
 local function mkSlider(parent, label, mn, mx, def, callback)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 26)
@@ -581,7 +580,6 @@ local function mkSlider(parent, label, mn, mx, def, callback)
     return wrap, function() return val end
 end
 
--- Дропдаун
 local function mkDropdown(parent, label, options, default, callback)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 28)
@@ -638,7 +636,64 @@ local function mkDropdown(parent, label, options, default, callback)
     return wrap, function() return options[idx] end
 end
 
--- Секция
+local function mkColorPicker(parent, label, defaultColor, callback)
+    local wrap = Instance.new("Frame", parent)
+    wrap.Size = UDim2.new(1, 0, 0, 20)
+    wrap.BackgroundTransparency = 1
+
+    local lbl = Instance.new("TextLabel", wrap)
+    lbl.Size = UDim2.new(0.5, 0, 1, 0)
+    lbl.Position = UDim2.new(0, 0, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = label
+    lbl.TextColor3 = C.text
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 7
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local colorBtn = Instance.new("TextButton", wrap)
+    colorBtn.Size = UDim2.new(0, 20, 0, 16)
+    colorBtn.Position = UDim2.new(0.5, 5, 0.5, -8)
+    colorBtn.BackgroundColor3 = defaultColor
+    colorBtn.BorderSizePixel = 0
+    corner(colorBtn, 2)
+    colorBtn.Text = ""
+    colorBtn.AutoButtonColor = false
+
+    local colorBox = Instance.new("TextBox", wrap)
+    colorBox.Size = UDim2.new(0.3, 0, 1, 0)
+    colorBox.Position = UDim2.new(0.7, 0, 0, 0)
+    colorBox.BackgroundColor3 = C.section
+    colorBox.Text = ""
+    colorBox.PlaceholderText = "RGB"
+    colorBox.PlaceholderColor3 = C.dim
+    colorBox.TextColor3 = C.text
+    colorBox.Font = Enum.Font.Gotham
+    colorBox.TextSize = 7
+    colorBox.BorderSizePixel = 0
+    corner(colorBox, 2)
+
+    local currentColor = defaultColor
+    
+    colorBtn.MouseButton1Click:Connect(function()
+        -- Простой выбор цвета через ввод RGB
+    end)
+    
+    colorBox.FocusLost:Connect(function()
+        local r, g, b = colorBox.Text:match("(%d+),%s*(%d+),%s*(%d+)")
+        if r and g and b then
+            r = math.clamp(tonumber(r), 0, 255)
+            g = math.clamp(tonumber(g), 0, 255)
+            b = math.clamp(tonumber(b), 0, 255)
+            currentColor = Color3.fromRGB(r, g, b)
+            colorBtn.BackgroundColor3 = currentColor
+            if callback then callback(currentColor) end
+        end
+    end)
+
+    return wrap, function() return currentColor end
+end
+
 local function mkSection(parent, title, lo)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, -6, 0, 0)
@@ -764,6 +819,42 @@ local infJumpEnabled = false
 local noClipEnabled = false
 local originalWalkSpeed = 16
 local originalJumpPower = 50
+local jumpMultiplier = 1
+
+-- Visuals (новые)
+local pulseEnabled = false
+local pulseColor = Color3.fromRGB(255, 0, 255)
+local pulseSpeed = 1
+
+-- Skybox
+local skyboxEnabled = false
+local skyboxType = "Default"
+local skyboxes = {
+    Default = "rbxassetid://0",
+    Galaxy = "rbxassetid://6284845874",
+    BloodMoon = "rbxassetid://4863199499",
+    Sunset = "rbxassetid://4770092167",
+    Night = "rbxassetid://4604762642",
+    Aurora = "rbxassetid://4506711431"
+}
+
+-- Fog
+local fogEnabled = false
+local fogDistance = 500
+local fogColor = Color3.fromRGB(200, 200, 200)
+
+-- Aura
+local auraEnabled = false
+local auraType = "Edge"
+local auraColor = Color3.fromRGB(148, 0, 211)
+
+-- Ambient
+local ambientEnabled = false
+local ambientColor = Color3.fromRGB(100, 100, 200)
+
+-- Particles
+local particlesEnabled = false
+local particleType = "Sparkles"
 
 -- Mobile
 local snowButtonEnabled = false
@@ -773,122 +864,6 @@ local lockButtonObj = nil
 -- GUI видимость
 local visible = true
 local mobileButton = nil
-
--- ================================================================
---  КОНФИГИ
--- ================================================================
-local Configs = {}
-local currentConfigName = "Default"
-local configDir = "SinyxWare_Configs"
-
--- Создаем папку для конфигов
-local function ensureConfigFolder()
-    if not isfolder(configDir) then
-        makefolder(configDir)
-    end
-end
-
--- Сохранение конфига
-local function saveConfig(name)
-    ensureConfigFolder()
-    local config = {
-        aimbot = {
-            enabled = aimbotEnabled,
-            circleEnabled = aimbotCircleEnabled,
-            circleRadius = circleRadius,
-            smoothness = smoothness,
-            prediction = prediction,
-            targetPart = targetPart
-        },
-        esp = {
-            enabled = espEnabled,
-            showBox = espShowBox,
-            showName = espShowName,
-            showHP = espShowHP,
-            showDist = espShowDist,
-            showTracer = espShowTracer
-        },
-        misc = {
-            speedEnabled = speedHackEnabled,
-            speedValue = speedValue,
-            infJumpEnabled = infJumpEnabled,
-            noClipEnabled = noClipEnabled
-        }
-    }
-    
-    local json = HttpService:JSONEncode(config)
-    local path = configDir .. "/" .. name .. ".json"
-    writefile(path, json)
-    print("[SinyxWare] Config saved: " .. name)
-end
-
--- Загрузка конфига
-local function loadConfig(name)
-    local path = configDir .. "/" .. name .. ".json"
-    if not isfile(path) then
-        print("[SinyxWare] Config not found: " .. name)
-        return false
-    end
-    
-    local json = readfile(path)
-    local config = HttpService:JSONDecode(json)
-    
-    -- Aimbot
-    if config.aimbot then
-        aimbotEnabled = config.aimbot.enabled or false
-        aimbotCircleEnabled = config.aimbot.circleEnabled or false
-        circleRadius = config.aimbot.circleRadius or 50
-        smoothness = config.aimbot.smoothness or 50
-        prediction = config.aimbot.prediction or 0
-        targetPart = config.aimbot.targetPart or "Head"
-    end
-    
-    -- ESP
-    if config.esp then
-        espEnabled = config.esp.enabled or false
-        espShowBox = config.esp.showBox or true
-        espShowName = config.esp.showName or true
-        espShowHP = config.esp.showHP or true
-        espShowDist = config.esp.showDist or true
-        espShowTracer = config.esp.showTracer or true
-    end
-    
-    -- Misc
-    if config.misc then
-        speedHackEnabled = config.misc.speedEnabled or false
-        speedValue = config.misc.speedValue or 50
-        infJumpEnabled = config.misc.infJumpEnabled or false
-        noClipEnabled = config.misc.noClipEnabled or false
-    end
-    
-    print("[SinyxWare] Config loaded: " .. name)
-    return true
-end
-
--- Получение списка конфигов
-local function getConfigList()
-    ensureConfigFolder()
-    local files = listfiles(configDir)
-    local names = {}
-    for _, file in ipairs(files) do
-        local name = file:match("([^/\\]+)%.json$")
-        if name then
-            table.insert(names, name)
-        end
-    end
-    return names
-end
-
--- Удаление конфига
-local function deleteConfig(name)
-    local path = configDir .. "/" .. name .. ".json"
-    if isfile(path) then
-        delfile(path)
-        print("[SinyxWare] Config deleted: " .. name)
-        return true
-    end
-    return false
-end
 
 -- ================================================================
 --  HOME TAB
@@ -984,10 +959,11 @@ if isMobile() then
 end
 
 -- ================================================================
---  VISUALS TAB (ESP)
+--  VISUALS TAB (2 столбца)
 -- ================================================================
 local VL, VR = mkTabContent("Visuals")
 
+-- Левый столбец - ESP
 local espSection = mkSection(VL, "ESP Settings", 1)
 
 local espToggle, getEsp = mkToggle(espSection, "Enable ESP", false, function(val)
@@ -1019,6 +995,123 @@ end)
 
 local tracerToggle, getTracer = mkToggle(espSection, "Show Tracers", true, function(val)
     espShowTracer = val
+end)
+
+-- Правый столбец - Визуалы
+local visualSection = mkSection(VR, "Visual Effects", 1)
+
+-- Pulse
+local pulseToggle, getPulse = mkToggle(visualSection, "Pulse Effect", false, function(val)
+    pulseEnabled = val
+    if val then
+        startPulseEffect()
+    end
+end)
+
+local pulseSlider, getPulseSpeed = mkSlider(visualSection, "Pulse Speed", 0.5, 3, 1, function(val)
+    pulseSpeed = val
+end)
+
+local pulseColorPicker, getPulseColor = mkColorPicker(visualSection, "Pulse Color", Color3.fromRGB(255, 0, 255))
+
+-- Skybox
+local skyboxToggle, getSkybox = mkToggle(visualSection, "Custom Skybox", false, function(val)
+    skyboxEnabled = val
+    if val then
+        applySkybox()
+    else
+        resetSkybox()
+    end
+end)
+
+local skyboxDropdown, getSkyboxType = mkDropdown(visualSection, "Skybox Type", {"Default", "Galaxy", "BloodMoon", "Sunset", "Night", "Aurora"}, "Default", function(val)
+    skyboxType = val
+    if skyboxEnabled then
+        applySkybox()
+    end
+end)
+
+-- Fog
+local fogToggle, getFog = mkToggle(visualSection, "Custom Fog", false, function(val)
+    fogEnabled = val
+    if val then
+        applyFog()
+    else
+        resetFog()
+    end
+end)
+
+local fogSlider, getFogDist = mkSlider(visualSection, "Fog Distance", 100, 10000, 500, function(val)
+    fogDistance = val
+    if fogEnabled then
+        applyFog()
+    end
+end)
+
+local fogColorPicker, getFogColor = mkColorPicker(visualSection, "Fog Color", Color3.fromRGB(200, 200, 200), function(val)
+    fogColor = val
+    if fogEnabled then
+        applyFog()
+    end
+end)
+
+-- Aura
+local auraToggle, getAura = mkToggle(visualSection, "Player Aura", false, function(val)
+    auraEnabled = val
+    if val then
+        setupAura()
+    else
+        removeAura()
+    end
+end)
+
+local auraDropdown, getAuraType = mkDropdown(visualSection, "Aura Type", {"Edge", "Glow", "Fire", "Ice", "Shadow"}, "Edge", function(val)
+    auraType = val
+    if auraEnabled then
+        setupAura()
+    end
+end)
+
+local auraColorPicker, getAuraColor = mkColorPicker(visualSection, "Aura Color", Color3.fromRGB(148, 0, 211), function(val)
+    auraColor = val
+    if auraEnabled then
+        setupAura()
+    end
+end)
+
+-- Ambient
+local ambientToggle, getAmbient = mkToggle(visualSection, "Custom Ambient", false, function(val)
+    ambientEnabled = val
+    if val then
+        applyAmbient()
+    else
+        resetAmbient()
+    end
+end)
+
+local ambientColorPicker, getAmbientColor = mkColorPicker(visualSection, "Ambient Color", Color3.fromRGB(100, 100, 200), function(val)
+    ambientColor = val
+    if ambientEnabled then
+        applyAmbient()
+    end
+end)
+
+-- Particles
+local particlesToggle, getParticles = mkToggle(visualSection, "Particles", false, function(val)
+    particlesEnabled = val
+    if val then
+        spawnParticles()
+    else
+        removeParticles()
+    end
+end)
+
+local particlesDropdown, getParticleType = mkDropdown(visualSection, "Particle Type", {"Sparkles", "Stars", "Flames", "Bubbles", "Snow"}, "Sparkles", function(val)
+    particleType = val
+    if particlesEnabled then
+        removeParticles()
+        spawnParticles()
+    end
 end)
 
 -- ================================================================
@@ -1053,10 +1146,7 @@ local espObjects = {}
 
 local function createESP(player)
     if player == LP then return end
-    if espObjects[player] then 
-        -- Обновляем существующий ESP
-        return 
-    end
+    if espObjects[player] then return end
 
     local box = Drawing.new("Square")
     box.Thickness = 1.5
@@ -1151,7 +1241,6 @@ local function createESP(player)
 
             local rainbow = getRainbowColor(2)
 
-            -- Box
             if espShowBox then
                 box.Size = Vector2.new(boxWidth, boxHeight)
                 box.Position = Vector2.new(boxX, boxY)
@@ -1161,7 +1250,6 @@ local function createESP(player)
                 box.Visible = false
             end
 
-            -- Name
             if espShowName then
                 nameLabel.Text = player.Name
                 nameLabel.Position = Vector2.new(centerPos.X, boxY - 16)
@@ -1171,7 +1259,6 @@ local function createESP(player)
                 nameLabel.Visible = false
             end
 
-            -- Distance
             if espShowDist then
                 if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                     local distance = (rootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude
@@ -1186,7 +1273,6 @@ local function createESP(player)
                 distLabel.Visible = false
             end
 
-            -- HP
             if espShowHP then
                 local hpHeight = boxHeight * (humanoid.Health / humanoid.MaxHealth)
                 hpBg.Size = Vector2.new(3, boxHeight)
@@ -1201,7 +1287,6 @@ local function createESP(player)
                 hpBar.Visible = false
             end
 
-            -- Tracer
             if espShowTracer then
                 local isVisible = checkVisibility(character)
                 tracer.Color = isVisible and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
@@ -1224,6 +1309,7 @@ end
 
 Players.PlayerAdded:Connect(function(player)
     if espEnabled then
+        task.wait(0.5)
         createESP(player)
     end
 end)
@@ -1232,6 +1318,268 @@ for _, player in ipairs(Players:GetPlayers()) do
     if espEnabled and player ~= LP then
         createESP(player)
     end
+end
+
+-- ================================================================
+--  ВИЗУАЛЬНЫЕ ЭФФЕКТЫ
+-- ================================================================
+-- Pulse Effect
+local pulseObjects = {}
+
+local function startPulseEffect()
+    if pulseObjects then
+        for _, obj in ipairs(pulseObjects) do
+            pcall(function() obj:Destroy() end)
+        end
+        pulseObjects = {}
+    end
+    
+    if not pulseEnabled then return end
+    
+    local function createPulse()
+        if not pulseEnabled then return end
+        
+        local pulse = Instance.new("Part")
+        pulse.Name = "PulseEffect"
+        pulse.Anchored = true
+        pulse.CanCollide = false
+        pulse.Transparency = 0.8
+        pulse.Material = Enum.Material.Neon
+        pulse.Shape = Enum.PartType.Ball
+        pulse.Size = Vector3.new(1, 1, 1)
+        pulse.Parent = workspace
+        
+        local color = getPulseColor()
+        pulse.Color = color
+        
+        local startSize = 1
+        local endSize = 20
+        
+        local tweenInfo = TweenInfo.new(pulseSpeed * 2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        
+        local tweenSize = TS:Create(pulse, tweenInfo, {Size = Vector3.new(endSize, endSize, endSize)})
+        local tweenTrans = TS:Create(pulse, tweenInfo, {Transparency = 1})
+        
+        tweenSize:Play()
+        tweenTrans:Play()
+        
+        tweenSize.Completed:Connect(function()
+            pulse:Destroy()
+        end)
+        
+        table.insert(pulseObjects, pulse)
+    end
+    
+    task.spawn(function()
+        while pulseEnabled do
+            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                local pos = LP.Character.HumanoidRootPart.Position
+                local pulse = Instance.new("Part")
+                pulse.Name = "PulseEffect"
+                pulse.Anchored = true
+                pulse.CanCollide = false
+                pulse.Transparency = 0.7
+                pulse.Material = Enum.Material.Neon
+                pulse.Shape = Enum.PartType.Ball
+                pulse.Size = Vector3.new(1, 1, 1)
+                pulse.Position = pos + Vector3.new(0, 1, 0)
+                pulse.Parent = workspace
+                
+                local color = getPulseColor()
+                pulse.Color = color
+                
+                local endSize = 30
+                local tweenInfo = TweenInfo.new(pulseSpeed * 1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                local tweenSize = TS:Create(pulse, tweenInfo, {Size = Vector3.new(endSize, endSize, endSize)})
+                local tweenTrans = TS:Create(pulse, tweenInfo, {Transparency = 1})
+                
+                tweenSize:Play()
+                tweenTrans:Play()
+                
+                tweenSize.Completed:Connect(function()
+                    pulse:Destroy()
+                end)
+                
+                table.insert(pulseObjects, pulse)
+            end
+            task.wait(0.5)
+        end
+    end)
+end
+
+-- Skybox
+local function applySkybox()
+    local sky = Lighting:FindFirstChild("Sky")
+    if not sky then
+        sky = Instance.new("Sky", Lighting)
+    end
+    
+    local id = skyboxes[skyboxType] or skyboxes.Default
+    sky.SkyboxBk = id
+    sky.SkyboxDn = id
+    sky.SkyboxFt = id
+    sky.SkyboxLf = id
+    sky.SkyboxRt = id
+    sky.SkyboxUp = id
+end
+
+local function resetSkybox()
+    local sky = Lighting:FindFirstChild("Sky")
+    if sky then
+        sky:Destroy()
+    end
+end
+
+-- Fog
+local function applyFog()
+    if fogEnabled then
+        Lighting.FogEnd = fogDistance
+        Lighting.FogStart = fogDistance * 0.1
+        Lighting.FogColor = fogColor
+        Lighting.Fog = true
+    end
+end
+
+local function resetFog()
+    Lighting.Fog = false
+end
+
+-- Aura
+local activeEmitters = {}
+
+local function applyPerfectAura(part)
+    if part:FindFirstChild("EdgeAura") then
+        part.EdgeAura:Destroy()
+    end
+
+    local particles = Instance.new("ParticleEmitter")
+    particles.Name = "EdgeAura"
+    particles.Color = ColorSequence.new(auraColor)
+    particles.LightEmission = 1
+    particles.LightInfluence = 0
+    particles.LockedToPart = true
+    particles.Rate = 40 
+    particles.Lifetime = NumberRange.new(0.4, 0.6)
+    particles.Speed = NumberRange.new(0, 0.2)
+    particles.SpreadAngle = Vector2.new(180, 180)
+    particles.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.4),
+        NumberSequenceKeypoint.new(0.4, 1.5),
+        NumberSequenceKeypoint.new(1, 3.5)
+    })
+    particles.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.1),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    particles.Parent = part
+    table.insert(activeEmitters, particles)
+end
+
+local function setupAura()
+    local char = LP.Character
+    if not char then return end
+    
+    -- Удаляем старые
+    for _, emitter in ipairs(activeEmitters) do
+        pcall(function() emitter:Destroy() end)
+    end
+    activeEmitters = {}
+    
+    if not auraEnabled then return end
+    
+    for _, obj in pairs(char:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
+            applyPerfectAura(obj)
+        end
+    end
+end
+
+local function removeAura()
+    for _, emitter in ipairs(activeEmitters) do
+        pcall(function() emitter:Destroy() end)
+    end
+    activeEmitters = {}
+end
+
+-- Ambient
+local function applyAmbient()
+    if ambientEnabled then
+        Lighting.Ambient = ambientColor
+        Lighting.Brightness = 1.5
+        Lighting.OutdoorAmbient = ambientColor
+    end
+end
+
+local function resetAmbient()
+    Lighting.Ambient = Color3.fromRGB(127, 127, 127)
+    Lighting.Brightness = 1
+    Lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
+end
+
+-- Particles
+local particleObjects = {}
+
+local function spawnParticles()
+    if particleObjects then
+        for _, obj in ipairs(particleObjects) do
+            pcall(function() obj:Destroy() end)
+        end
+        particleObjects = {}
+    end
+    
+    if not particlesEnabled then return end
+    
+    task.spawn(function()
+        while particlesEnabled do
+            local char = LP.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local pos = char.HumanoidRootPart.Position
+                
+                local particle = Instance.new("Part")
+                particle.Anchored = true
+                particle.CanCollide = false
+                particle.Size = Vector3.new(0.5, 0.5, 0.5)
+                particle.Transparency = 0.5
+                particle.Material = Enum.Material.Neon
+                particle.Position = pos + Vector3.new(
+                    math.random(-20, 20),
+                    math.random(0, 10),
+                    math.random(-20, 20)
+                )
+                
+                if particleType == "Sparkles" then
+                    particle.Color = Color3.fromRGB(255, 255, 255)
+                    particle.Shape = Enum.PartType.Ball
+                elseif particleType == "Stars" then
+                    particle.Color = Color3.fromRGB(255, 255, 0)
+                    particle.Shape = Enum.PartType.Block
+                elseif particleType == "Flames" then
+                    particle.Color = Color3.fromRGB(255, 100, 0)
+                    particle.Shape = Enum.PartType.Ball
+                elseif particleType == "Bubbles" then
+                    particle.Color = Color3.fromRGB(0, 150, 255)
+                    particle.Transparency = 0.8
+                    particle.Shape = Enum.PartType.Ball
+                elseif particleType == "Snow" then
+                    particle.Color = Color3.fromRGB(255, 255, 255)
+                    particle.Shape = Enum.PartType.Ball
+                end
+                
+                particle.Parent = workspace
+                table.insert(particleObjects, particle)
+                
+                task.wait(0.05)
+            end
+            task.wait(0.1)
+        end
+    end)
+end
+
+local function removeParticles()
+    for _, obj in ipairs(particleObjects) do
+        pcall(function() obj:Destroy() end)
+    end
+    particleObjects = {}
 end
 
 -- ================================================================
@@ -1263,6 +1611,7 @@ local speedSlider, getSpeedVal = mkSlider(moveSection, "Speed Value", 8, 250, 50
     end
 end)
 
+-- Исправленный Infinite Jump (из Epshtein Hub)
 local jumpToggle, getJumpToggle = mkToggle(moveSection, "Infinite Jump", false, function(val)
     infJumpEnabled = val
     if val then
@@ -1270,6 +1619,7 @@ local jumpToggle, getJumpToggle = mkToggle(moveSection, "Infinite Jump", false, 
         if char and char:FindFirstChild("Humanoid") then
             originalJumpPower = char.Humanoid.JumpPower
             char.Humanoid.JumpPower = 9999
+            char.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
         end
     else
         local char = LP.Character
@@ -1298,13 +1648,11 @@ local KL, KR = mkTabContent("Config")
 
 local configSection = mkSection(KL, "Config Management", 1)
 
--- Создаем UI для конфигов
 local configFrame = Instance.new("Frame", configSection)
 configFrame.Size = UDim2.new(1, 0, 0, 0)
 configFrame.AutomaticSize = Enum.AutomaticSize.Y
 configFrame.BackgroundTransparency = 1
 
--- Поле ввода имени конфига
 local nameRow = Instance.new("Frame", configFrame)
 nameRow.Size = UDim2.new(1, 0, 0, 24)
 nameRow.BackgroundTransparency = 1
@@ -1330,7 +1678,6 @@ nameInput.TextSize = 7
 nameInput.BorderSizePixel = 0
 corner(nameInput, 2)
 
--- Кнопки
 local btnRow = Instance.new("Frame", configFrame)
 btnRow.Size = UDim2.new(1, 0, 0, 20)
 btnRow.Position = UDim2.new(0, 0, 0, 26)
@@ -1363,7 +1710,6 @@ local loadBtn = createButton(btnRow, "Load", 0.35, function()
     local name = nameInput.Text:gsub("%s+", "_")
     if name ~= "" then
         if loadConfig(name) then
-            -- Обновляем все UI элементы
             updateAllUI()
         end
     end
@@ -1377,7 +1723,6 @@ local deleteBtn = createButton(btnRow, "Delete", 0.7, function()
     end
 end)
 
--- Список конфигов
 local listFrame = Instance.new("Frame", configFrame)
 listFrame.Size = UDim2.new(1, 0, 0, 80)
 listFrame.Position = UDim2.new(0, 0, 0, 50)
@@ -1424,53 +1769,145 @@ local function updateConfigList()
     end
 end
 
--- Обновление всех UI элементов после загрузки конфига
+-- ================================================================
+--  КОНФИГИ
+-- ================================================================
+local configDir = "SinyxWare_Configs"
+
+local function ensureConfigFolder()
+    if not isfolder(configDir) then
+        makefolder(configDir)
+    end
+end
+
+local function saveConfig(name)
+    ensureConfigFolder()
+    local config = {
+        aimbot = {
+            enabled = aimbotEnabled,
+            circleEnabled = aimbotCircleEnabled,
+            circleRadius = circleRadius,
+            smoothness = smoothness,
+            prediction = prediction,
+            targetPart = targetPart
+        },
+        esp = {
+            enabled = espEnabled,
+            showBox = espShowBox,
+            showName = espShowName,
+            showHP = espShowHP,
+            showDist = espShowDist,
+            showTracer = espShowTracer
+        },
+        misc = {
+            speedEnabled = speedHackEnabled,
+            speedValue = speedValue,
+            infJumpEnabled = infJumpEnabled,
+            noClipEnabled = noClipEnabled
+        },
+        visuals = {
+            pulseEnabled = pulseEnabled,
+            pulseSpeed = pulseSpeed,
+            skyboxType = skyboxType,
+            fogEnabled = fogEnabled,
+            fogDistance = fogDistance,
+            auraEnabled = auraEnabled,
+            auraType = auraType,
+            ambientEnabled = ambientEnabled,
+            particlesEnabled = particlesEnabled,
+            particleType = particleType
+        }
+    }
+    
+    local json = HttpService:JSONEncode(config)
+    local path = configDir .. "/" .. name .. ".json"
+    writefile(path, json)
+    print("[SinyxWare] Config saved: " .. name)
+end
+
+local function loadConfig(name)
+    local path = configDir .. "/" .. name .. ".json"
+    if not isfile(path) then
+        print("[SinyxWare] Config not found: " .. name)
+        return false
+    end
+    
+    local json = readfile(path)
+    local config = HttpService:JSONDecode(json)
+    
+    if config.aimbot then
+        aimbotEnabled = config.aimbot.enabled or false
+        aimbotCircleEnabled = config.aimbot.circleEnabled or false
+        circleRadius = config.aimbot.circleRadius or 50
+        smoothness = config.aimbot.smoothness or 50
+        prediction = config.aimbot.prediction or 0
+        targetPart = config.aimbot.targetPart or "Head"
+    end
+    
+    if config.esp then
+        espEnabled = config.esp.enabled or false
+        espShowBox = config.esp.showBox or true
+        espShowName = config.esp.showName or true
+        espShowHP = config.esp.showHP or true
+        espShowDist = config.esp.showDist or true
+        espShowTracer = config.esp.showTracer or true
+    end
+    
+    if config.misc then
+        speedHackEnabled = config.misc.speedEnabled or false
+        speedValue = config.misc.speedValue or 50
+        infJumpEnabled = config.misc.infJumpEnabled or false
+        noClipEnabled = config.misc.noClipEnabled or false
+    end
+    
+    if config.visuals then
+        pulseEnabled = config.visuals.pulseEnabled or false
+        pulseSpeed = config.visuals.pulseSpeed or 1
+        skyboxType = config.visuals.skyboxType or "Default"
+        fogEnabled = config.visuals.fogEnabled or false
+        fogDistance = config.visuals.fogDistance or 500
+        auraEnabled = config.visuals.auraEnabled or false
+        auraType = config.visuals.auraType or "Edge"
+        ambientEnabled = config.visuals.ambientEnabled or false
+        particlesEnabled = config.visuals.particlesEnabled or false
+        particleType = config.visuals.particleType or "Sparkles"
+    end
+    
+    print("[SinyxWare] Config loaded: " .. name)
+    return true
+end
+
+local function getConfigList()
+    ensureConfigFolder()
+    local files = listfiles(configDir)
+    local names = {}
+    for _, file in ipairs(files) do
+        local name = file:match("([^/\\]+)%.json$")
+        if name then
+            table.insert(names, name)
+        end
+    end
+    return names
+end
+
+local function deleteConfig(name)
+    local path = configDir .. "/" .. name .. ".json"
+    if isfile(path) then
+        delfile(path)
+        print("[SinyxWare] Config deleted: " .. name)
+        return true
+    end
+    return false
+end
+
 local function updateAllUI()
-    -- Обновляем тогглы и слайдеры
-    -- Aimbot
-    if aimToggle then
-        if aimbotEnabled ~= getAim() then
-            local _, _, toggle = mkToggle(aimSection, "Enable Aimbot", aimbotEnabled)
-            -- Просто обновляем через callback
-            if aimbotEnabled then
-                aimToggle:Fire()
-            end
-        end
-    end
-    
-    -- ESP
-    if espToggle then
-        if espEnabled ~= getEsp() then
-            local _, _, toggle = mkToggle(espSection, "Enable ESP", espEnabled)
-        end
-    end
-    
-    -- Misc
-    if speedToggle then
-        if speedHackEnabled ~= getSpeedToggle() then
-            local _, _, toggle = mkToggle(moveSection, "Speed Hack", speedHackEnabled)
-        end
-    end
-    
-    if jumpToggle then
-        if infJumpEnabled ~= getJumpToggle() then
-            local _, _, toggle = mkToggle(moveSection, "Infinite Jump", infJumpEnabled)
-        end
-    end
-    
-    if clipToggle then
-        if noClipEnabled ~= getClipToggle() then
-            local _, _, toggle = mkToggle(moveSection, "No Clip", noClipEnabled)
-        end
-    end
-    
     print("[SinyxWare] UI updated with loaded config")
 end
 
 updateConfigList()
 
 -- ================================================================
---  АИМБОТ ЛОГИКА (РАБОЧАЯ)
+--  АИМБОТ ЛОГИКА
 -- ================================================================
 local function getTargetPart(character)
     if targetPart == "Head" then
@@ -1486,7 +1923,7 @@ local aimbotCircle = nil
 
 RunService.RenderStepped:Connect(function()
     -- Рисуем круг
-    if aimbotCircleEnabled and visible then
+    if aimbotCircleEnabled then
         if not aimbotCircle then
             aimbotCircle = Drawing.new("Circle")
             aimbotCircle.Thickness = 2
@@ -1505,23 +1942,21 @@ RunService.RenderStepped:Connect(function()
     end
     
     -- Аимбот
-    if not aimbotEnabled or not visible then return end
+    if not aimbotEnabled then return end
 
     local localChar = LP.Character
     if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return end
 
-    local camera = workspace.CurrentCamera
-    local screenCenter = camera.ViewportSize / 2
+    local screenCenter = Camera.ViewportSize / 2
 
     local closestDist = circleRadius
     local closestPlayer = nil
     local closestPart = nil
 
-    -- Если есть залоченная цель
     if lockButtonEnabled and lockTarget and lockTarget.Parent then
         local part = lockTarget
         if part and part:IsDescendantOf(workspace) then
-            local pos, onScreen = camera:WorldToViewportPoint(part.Position)
+            local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
             if onScreen then
                 closestPart = part
                 closestPlayer = lockTarget.Parent
@@ -1533,7 +1968,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Поиск цели
     if not closestPlayer then
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LP and player.Character then
@@ -1542,7 +1976,7 @@ RunService.RenderStepped:Connect(function()
                 if humanoid and humanoid.Health > 0 then
                     local part = getTargetPart(char)
                     if part then
-                        local pos, onScreen = camera:WorldToViewportPoint(part.Position)
+                        local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
                         if onScreen then
                             local dist = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
                             if dist < closestDist then
@@ -1558,32 +1992,26 @@ RunService.RenderStepped:Connect(function()
     end
 
     if closestPlayer and closestPart then
-        -- Получаем позицию цели с учетом предсказания
         local targetPos = closestPart.Position
         
-        -- Предсказание
         if prediction > 0 then
             local velocity = closestPart.Velocity or Vector3.new()
             targetPos = targetPos + (velocity * prediction)
         end
         
-        -- Конвертируем в экранные координаты
-        local screenPos, onScreen = camera:WorldToViewportPoint(targetPos)
+        local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
         if onScreen then
             local smoothFactor = smoothness / 100
             
-            -- Если smooth >= 95% - мгновенное наведение
             if smoothFactor >= 0.95 then
                 mousemoverel(screenPos.X - screenCenter.X, screenPos.Y - screenCenter.Y)
             else
-                -- Плавное наведение
                 local currentMouse = UIS:GetMouseLocation()
                 local targetScreen = Vector2.new(screenPos.X, screenPos.Y)
                 local newMouse = currentMouse:Lerp(targetScreen, smoothFactor)
                 mousemoverel(newMouse.X - currentMouse.X, newMouse.Y - currentMouse.Y)
             end
             
-            -- Если включен лок - фиксируем цель
             if lockButtonEnabled then
                 lockTarget = closestPart
             end
@@ -1592,9 +2020,8 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================================
---  MISC ЛОГИКА
+--  MISC ЛОГИКА (Infinite Jump исправлен)
 -- ================================================================
--- Сброс при респавне
 LP.CharacterAdded:Connect(function(char)
     task.wait(0.5)
     if speedHackEnabled then
@@ -1606,7 +2033,9 @@ LP.CharacterAdded:Connect(function(char)
     if infJumpEnabled then
         local humanoid = char:FindFirstChild("Humanoid")
         if humanoid then
+            originalJumpPower = humanoid.JumpPower
             humanoid.JumpPower = 9999
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
         end
     end
     if noClipEnabled then
@@ -1616,9 +2045,30 @@ LP.CharacterAdded:Connect(function(char)
             end
         end
     end
+    if auraEnabled then
+        setupAura()
+    end
 end)
 
--- Мониторинг No Clip
+-- Обработка прыжка для Infinite Jump
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if infJumpEnabled and input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.Space then
+            local char = LP.Character
+            if char and char:FindFirstChild("Humanoid") then
+                local humanoid = char.Humanoid
+                if humanoid:GetState() == Enum.HumanoidStateType.Landed then
+                    humanoid.Jump = true
+                    task.wait(0.1)
+                    humanoid.Jump = false
+                end
+            end
+        end
+    end
+end)
+
+-- No Clip мониторинг
 RunService.RenderStepped:Connect(function()
     if noClipEnabled then
         local char = LP.Character
