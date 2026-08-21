@@ -1,6 +1,6 @@
 -- ================================================================
 --  SINYXWARE v14 | FULL FIX + CROSSHAIR
---  Автор: GothbreachHelper
+--  РђРІС‚РѕСЂ: GothbreachHelper
 -- ================================================================
 
 local UIS = game:GetService("UserInputService")
@@ -15,7 +15,7 @@ local Lighting = game:GetService("Lighting")
 local Mouse = LP:GetMouse()
 
 -- ================================================================
---  ЗАЩИТА ОТ ДУБЛИРОВАНИЯ
+--  Р—РђР©РРўРђ РћРў Р”РЈР‘Р›РР РћР’РђРќРРЇ
 -- ================================================================
 pcall(function() CG:FindFirstChild("SinyxWare_Main"):Destroy() end)
 pcall(function() CG:FindFirstChild("SinyxWareMobileButtons"):Destroy() end)
@@ -28,7 +28,7 @@ pcall(function()
 end)
 
 -- ================================================================
---  ОПРЕДЕЛЕНИЕ УСТРОЙСТВА
+--  РћРџР Р•Р”Р•Р›Р•РќРР• РЈРЎРўР РћР™РЎРўР’Рђ
 -- ================================================================
 local function isMobile()
     return UIS.TouchEnabled and not UIS.MouseEnabled
@@ -36,7 +36,7 @@ end
 local deviceType = isMobile() and "Mobile" or "PC"
 
 -- ================================================================
---  ДЕТЕКТОР ЭКЗЕКУТОРА
+--  Р”Р•РўР•РљРўРћР  Р­РљР—Р•РљРЈРўРћР Рђ
 -- ================================================================
 local function DetectExecutor()
     if identifyexecutor then
@@ -59,7 +59,7 @@ end
 local currentExecutor = DetectExecutor()
 
 -- ================================================================
---  УВЕДОМЛЕНИЕ (сокращённо)
+--  РЈР’Р•Р”РћРњР›Р•РќРР• (СЃРѕРєСЂР°С‰С‘РЅРЅРѕ)
 -- ================================================================
 task.spawn(function()
     local old = CG:FindFirstChild("SinyxWare_Notification")
@@ -138,7 +138,7 @@ task.spawn(function()
 end)
 
 -- ================================================================
---  ЦВЕТА
+--  Р¦Р’Р•РўРђ
 -- ================================================================
 local C = {
     bg       = Color3.fromRGB(30, 15, 25),
@@ -158,7 +158,7 @@ local C = {
 }
 
 -- ================================================================
---  ХЕЛПЕРЫ
+--  РҐР•Р›РџР•Р Р«
 -- ================================================================
 local function corner(f, r)
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, r or 2)
@@ -231,6 +231,11 @@ local function mkSlider(parent, label, mn, mx, def, callback)
     fill.BackgroundColor3 = C.red
     fill.BorderSizePixel = 0
     corner(fill, 2)
+    local fillGrad = Instance.new("UIGradient", fill)
+    fillGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 160)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 30, 80)),
+    })
     local valLbl = Instance.new("TextLabel", track)
     valLbl.Size = UDim2.new(1, 0, 1, 0)
     valLbl.BackgroundTransparency = 1
@@ -348,7 +353,7 @@ local function mkDropdown(parent, label, options, default, callback)
     arr.Size = UDim2.new(0, 12, 1, 0)
     arr.Position = UDim2.new(1, -14, 0, 0)
     arr.BackgroundTransparency = 1
-    arr.Text = "∧"
+    arr.Text = "в€§"
     arr.TextColor3 = C.dim
     arr.Font = Enum.Font.GothamBold
     arr.TextSize = 6
@@ -374,6 +379,12 @@ local function mkSection(parent, title, lo)
     hdr.BackgroundColor3 = C.section
     hdr.BorderSizePixel = 0
     corner(hdr, 2)
+    local hdrGrad = Instance.new("UIGradient", hdr)
+    hdrGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 40, 75)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(70, 28, 55)),
+    })
+    hdrGrad.Rotation = 0
     local htxt = Instance.new("TextLabel", hdr)
     htxt.Size = UDim2.new(1, -22, 1, 0)
     htxt.Position = UDim2.new(0, 6, 0, 0)
@@ -387,7 +398,7 @@ local function mkSection(parent, title, lo)
     chevron.Size = UDim2.new(0, 16, 1, 0)
     chevron.Position = UDim2.new(1, -18, 0, 0)
     chevron.BackgroundTransparency = 1
-    chevron.Text = "∨"
+    chevron.Text = "в€Ё"
     chevron.TextColor3 = C.dim
     chevron.Font = Enum.Font.GothamBold
     chevron.TextSize = 8
@@ -399,6 +410,12 @@ local function mkSection(parent, title, lo)
     body.BackgroundColor3 = C.panel
     body.BorderSizePixel = 0
     corner(body, 2)
+    local bodyGrad = Instance.new("UIGradient", body)
+    bodyGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(75, 32, 58)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(55, 22, 42)),
+    })
+    bodyGrad.Rotation = 90
     local bl = Instance.new("UIListLayout", body)
     bl.Padding = UDim.new(0, 1)
     bl.SortOrder = Enum.SortOrder.LayoutOrder
@@ -409,7 +426,7 @@ local function mkSection(parent, title, lo)
     chevron.MouseButton1Click:Connect(function()
         collapsed = not collapsed
         body.Visible = not collapsed
-        chevron.Text = collapsed and ">" or "∨"
+        chevron.Text = collapsed and ">" or "в€Ё"
     end)
     return body
 end
@@ -448,7 +465,7 @@ local function mkTabContent(name, ContentArea)
 end
 
 -- ================================================================
---  ГЛАВНОЕ ОКНО
+--  Р“Р›РђР’РќРћР• РћРљРќРћ
 -- ================================================================
 local Root = Instance.new("ScreenGui")
 Root.Name = "SinyxWare_Main"
@@ -472,7 +489,7 @@ gradOuter.Color = ColorSequence.new{
 }
 Instance.new("UICorner", Outer).CornerRadius = UDim.new(0, 4)
 
--- РЕСАЙЗ ХЭНДЛ
+-- Р Р•РЎРђР™Р— РҐР­РќР”Р›
 local ResizeHandle = Instance.new("Frame", Outer)
 ResizeHandle.Size = UDim2.new(0, 16, 0, 16)
 ResizeHandle.Position = UDim2.new(1, -16, 1, -16)
@@ -483,7 +500,7 @@ ResizeHandle.ZIndex = 999
 local icon = Instance.new("TextLabel", ResizeHandle)
 icon.Size = UDim2.new(1, 0, 1, 0)
 icon.BackgroundTransparency = 1
-icon.Text = "↘"
+icon.Text = "в†"
 icon.TextColor3 = C.white
 icon.TextSize = 12
 icon.Font = Enum.Font.GothamBold
@@ -499,7 +516,7 @@ ResizeHandle.InputBegan:Connect(function(input)
         resizing = true
         resizeStart = input.Position
         startSize = Outer.Size
-        input.StopPropagation()
+        input:StopPropagation()
     end
 end)
 ResizeHandle.InputEnded:Connect(function(input)
@@ -581,11 +598,11 @@ TDiv.BackgroundColor3 = C.border
 TDiv.BorderSizePixel = 0
 
 local TABS = {
-    {n="Home", ico="⌂"},
-    {n="Combat", ico="✖"},
-    {n="Visuals", ico="◎"},
-    {n="Misc", ico="◉"},
-    {n="Config", ico="⚙"}
+    {n="Home", ico="вЊ‚"},
+    {n="Combat", ico="вњ–"},
+    {n="Visuals", ico="в—Ћ"},
+    {n="Misc", ico="в—‰"},
+    {n="Config", ico="вљ™"}
 }
 local TabBtns = {}
 local currentTab = "Home"
@@ -650,7 +667,7 @@ ContentArea.Position = UDim2.new(0, SW+1, 0, 0)
 ContentArea.BackgroundTransparency = 1
 ContentArea.ClipsDescendants = true
 
--- TOPBAR (сдвиг поиска вниз на 5px)
+-- TOPBAR (СЃРґРІРёРі РїРѕРёСЃРєР° РІРЅРёР· РЅР° 5px)
 local TopBar = Instance.new("Frame", ContentArea)
 TopBar.Size = UDim2.new(1, 0, 0, 22)
 TopBar.BackgroundColor3 = C.sidebar
@@ -664,12 +681,12 @@ local SearchIco = Instance.new("TextLabel", TopBar)
 SearchIco.Size = UDim2.new(0, 14, 1, 0)
 SearchIco.Position = UDim2.new(0, 4, 0, 0)
 SearchIco.BackgroundTransparency = 1
-SearchIco.Text = "🔍"
+SearchIco.Text = "рџ”Ќ"
 SearchIco.TextSize = 7
 SearchIco.TextColor3 = C.dim
 local SearchBox = Instance.new("TextBox", TopBar)
 SearchBox.Size = UDim2.new(1, -40, 1, -4)
-SearchBox.Position = UDim2.new(0, 20, 0, 5) -- сдвиг вниз на 5px
+SearchBox.Position = UDim2.new(0, 20, 0, 5) -- СЃРґРІРёРі РІРЅРёР· РЅР° 5px
 SearchBox.BackgroundTransparency = 1
 SearchBox.Text = ""
 SearchBox.PlaceholderText = "Search..."
@@ -683,7 +700,7 @@ local MoveIco = Instance.new("TextLabel", TopBar)
 MoveIco.Size = UDim2.new(0, 14, 0, 14)
 MoveIco.Position = UDim2.new(1, -17, 0.5, -7)
 MoveIco.BackgroundColor3 = C.section
-MoveIco.Text = "✛"
+MoveIco.Text = "вњ›"
 MoveIco.TextSize = 7
 MoveIco.TextColor3 = C.dim
 MoveIco.Font = Enum.Font.GothamBold
@@ -721,7 +738,7 @@ BotLbl.TextSize = 7
 BotLbl.TextXAlignment = Enum.TextXAlignment.Center
 
 -- ================================================================
---  ПЕРЕМЕННЫЕ
+--  РџР•Р Р•РњР•РќРќР«Р•
 -- ================================================================
 local aimbotEnabled = false
 local aimbotCircleEnabled = false
@@ -767,10 +784,11 @@ local pulseObject = nil
 
 -- Crosshair
 local crosshairEnabled = false
-local crosshairType = "Cross" -- или "Swastika"
+local crosshairType = "Cross" -- РёР»Рё "Swastika"
 local crosshairSize = 8
 local crosshairGui = nil
 local crosshairConnection = nil
+local createCrosshair, removeCrosshair  -- forward declarations
 
 local snowButtonEnabled = false
 local snowButtonObj = nil
@@ -778,7 +796,7 @@ local mobileButton = nil
 local visible = true
 
 -- ================================================================
---  ВИЗУАЛЫ (Aura, Skybox, Fog, Pulse, Particles)
+--  Р’РР—РЈРђР›Р« (Aura, Skybox, Fog, Pulse, Particles)
 -- ================================================================
 local function applyPerfectAura(part)
     if part:FindFirstChild("EdgeAura") then part.EdgeAura:Destroy() end
@@ -938,7 +956,7 @@ task.spawn(function()
 end)
 
 -- ================================================================
---  КОНФИГИ
+--  РљРћРќР¤РР“Р
 -- ================================================================
 local configDir = "SinyxWare_Configs"
 local function ensureConfigFolder() if not isfolder(configDir) then makefolder(configDir) end end
@@ -1064,7 +1082,7 @@ local function deleteConfig(name)
 end
 
 -- ================================================================
---  СОЗДАНИЕ ВКЛАДОК
+--  РЎРћР—Р”РђРќРР• Р’РљР›РђР”РћРљ
 -- ================================================================
 local function createTab(name)
     local f, colL, colR = mkTabContent(name, ContentArea)
@@ -1097,7 +1115,7 @@ infoText.TextYAlignment = Enum.TextYAlignment.Top
 infoText.LineHeight = 1.2
 
 -- ================================================================
---  COMBAT (переработан)
+--  COMBAT (РїРµСЂРµСЂР°Р±РѕС‚Р°РЅ)
 -- ================================================================
 local CL, CR = createTab("Combat")
 local mainSection = mkSection(CL, "Aimbot", 1)
@@ -1139,11 +1157,11 @@ if isMobile() then
             snowButtonObj.Parent = btnGui
             snowButtonObj.ZIndex = 999
             corner(snowButtonObj, 27)
-            -- Перетаскивание с блокировкой при lockButtonEnabled
+            -- РџРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРµ СЃ Р±Р»РѕРєРёСЂРѕРІРєРѕР№ РїСЂРё lockButtonEnabled
             local dragSnow = {active=false, start=nil, offset=nil}
             snowButtonObj.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.Touch then
-                    if lockButtonEnabled then return end -- запрет перетаскивания
+                    if lockButtonEnabled then return end -- Р·Р°РїСЂРµС‚ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ
                     dragSnow.active = true
                     dragSnow.start = input.Position
                     dragSnow.offset = snowButtonObj.Position
@@ -1158,14 +1176,13 @@ if isMobile() then
                     snowButtonObj.Position = UDim2.new(dragSnow.offset.X.Scale, dragSnow.offset.X.Offset + delta.X, dragSnow.offset.Y.Scale, dragSnow.offset.Y.Offset + delta.Y)
                 end
             end)
-            -- Мгновенное срабатывание по нажатию (MouseButton1Down / TouchBegan)
+            -- РњРіРЅРѕРІРµРЅРЅРѕРµ СЃСЂР°Р±Р°С‚С‹РІР°РЅРёРµ РїРѕ РЅР°Р¶Р°С‚РёСЋ (MouseButton1Down / TouchBegan)
             local function onPress()
+                aimbotEnabled = not aimbotEnabled
                 if lockButtonEnabled then
-                    lockButtonEnabled = not lockButtonEnabled
-                    snowButtonObj.BackgroundColor3 = lockButtonEnabled and C.yellow or (aimbotEnabled and C.green or C.red)
-                    if not lockButtonEnabled then lockTarget = nil end
+                    -- РџСЂРё Р»РѕРєРµ: РЅРµ СЃР±СЂР°СЃС‹РІР°РµРј С†РµР»СЊ РїСЂРё РІС‹РєР»СЋС‡РµРЅРёРё
+                    snowButtonObj.BackgroundColor3 = aimbotEnabled and C.yellow or Color3.fromRGB(180, 60, 60)
                 else
-                    aimbotEnabled = not aimbotEnabled
                     snowButtonObj.BackgroundColor3 = aimbotEnabled and C.green or C.red
                     if not aimbotEnabled then lockTarget = nil end
                 end
@@ -1179,7 +1196,9 @@ if isMobile() then
     mkToggle(mobileSection, "Lock Button", false, function(val)
         lockButtonEnabled = val
         if snowButtonObj then
-            snowButtonObj.BackgroundColor3 = lockButtonEnabled and C.yellow or (aimbotEnabled and C.green or C.red)
+            -- Р’РёР·СѓР°Р»СЊРЅРѕ РїРѕРєР°Р·С‹РІР°РµРј С‡С‚Рѕ РєРЅРѕРїРєР° Р·Р°Р»РѕС‡РµРЅР°
+            snowButtonObj.BackgroundColor3 = val and C.yellow or (aimbotEnabled and C.green or C.red)
+            -- Р—Р°РїСЂРµС‚ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ СѓР¶Рµ СЂРµР°Р»РёР·РѕРІР°РЅ С‡РµСЂРµР· if lockButtonEnabled then return end РІ InputBegan
         end
         if not val then lockTarget = nil end
     end)
@@ -1213,7 +1232,7 @@ mkToggle(visualSection, "Particles", false, function(val) particlesEnabled = val
 mkSlider(visualSection, "Spawn Multiplier", 1, 10, 5, function(val) particleMultiplier = val end)
 
 -- ================================================================
---  MISC (добавлен Crosshair)
+--  MISC (РґРѕР±Р°РІР»РµРЅ Crosshair)
 -- ================================================================
 local ML, MR = createTab("Misc")
 local moveSection = mkSection(ML, "Movement", 1)
@@ -1253,7 +1272,7 @@ mkToggle(moveSection, "No Clip", false, function(val)
     end
 end)
 
--- Crosshair секция
+-- Crosshair СЃРµРєС†РёСЏ
 local crosshairSection = mkSection(ML, "Crosshair", 2)
 mkToggle(crosshairSection, "Enable Crosshair", false, function(val)
     crosshairEnabled = val
@@ -1269,9 +1288,9 @@ mkSlider(crosshairSection, "Size", 4, 20, 8, function(val)
 end)
 
 -- ================================================================
---  CROSSHAIR ФУНКЦИИ (встроены в Misc)
+--  CROSSHAIR Р¤РЈРќРљР¦РР (РІСЃС‚СЂРѕРµРЅС‹ РІ Misc)
 -- ================================================================
-local function createCrosshair()
+createCrosshair = function()
     removeCrosshair()
     local pg = LP:FindFirstChildOfClass("PlayerGui")
     if not pg then return end
@@ -1303,7 +1322,7 @@ local function createCrosshair()
 
         local FlapLine = nil
         if isSwastika then
-            -- Свастика: дополнительная линия перпендикулярно в конце
+            -- РЎРІР°СЃС‚РёРєР°: РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ Р»РёРЅРёСЏ РїРµСЂРїРµРЅРґРёРєСѓР»СЏСЂРЅРѕ РІ РєРѕРЅС†Рµ
             FlapLine = Instance.new("Frame", BranchAnchor)
             FlapLine.Size = UDim2.new(0, FLAPS, 0, THICKNESS)
             FlapLine.Position = UDim2.new(0, LENGTH, 0, -THICKNESS/2)
@@ -1321,7 +1340,7 @@ local function createCrosshair()
         if fl then table.insert(lines, fl) end
     end
 
-    -- Цвет и вращение как в примере
+    -- Р¦РІРµС‚ Рё РІСЂР°С‰РµРЅРёРµ РєР°Рє РІ РїСЂРёРјРµСЂРµ
     local currentRotation = 0
     local hue = 0
     if crosshairConnection then crosshairConnection:Disconnect() end
@@ -1342,7 +1361,7 @@ local function createCrosshair()
     end)
 end
 
-local function removeCrosshair()
+removeCrosshair = function()
     if crosshairConnection then
         crosshairConnection:Disconnect()
         crosshairConnection = nil
@@ -1422,7 +1441,7 @@ local function updateConfigList()
     end
 end
 
--- Ровные кнопки: одинаковый размер и отступы
+-- Р РѕРІРЅС‹Рµ РєРЅРѕРїРєРё: РѕРґРёРЅР°РєРѕРІС‹Р№ СЂР°Р·РјРµСЂ Рё РѕС‚СЃС‚СѓРїС‹
 createButton(btnRow, "Save", 0, function() local n = nameInput.Text:gsub("%s+", "_"); if n~="" then saveConfig(n); updateConfigList() end end)
 createButton(btnRow, "Load", 0.33, function() local n = nameInput.Text:gsub("%s+", "_"); if n~="" then loadConfig(n); updateConfigList() end end)
 createButton(btnRow, "Delete", 0.66, function() local n = nameInput.Text:gsub("%s+", "_"); if n~="" then deleteConfig(n); updateConfigList() end end)
@@ -1446,7 +1465,7 @@ listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 updateConfigList()
 
 -- ================================================================
---  ESP (исправлено смещение)
+--  ESP (РёСЃРїСЂР°РІР»РµРЅРѕ СЃРјРµС‰РµРЅРёРµ)
 -- ================================================================
 local function getRainbowColor(speed)
     local t = tick() * (speed or 2)
@@ -1493,29 +1512,54 @@ function createESP(player)
             return
         end
         local rootPart = character.HumanoidRootPart; local humanoid = character.Humanoid
-        -- Используем CFrame для корректного позиционирования
-        local headPos, headOn = Camera:WorldToViewportPoint((rootPart.CFrame * CFrame.new(0,3,0)).Position)
-        local footPos, footOn = Camera:WorldToViewportPoint((rootPart.CFrame * CFrame.new(0,-3.5,0)).Position)
-        local centerPos = Camera:WorldToViewportPoint(rootPart.Position)
+        -- РЎС‚Р°Р±РёР»СЊРЅС‹Рµ РјРёСЂРѕРІС‹Рµ РїРѕР·РёС†РёРё (РЅРµ Р·Р°РІРёСЃСЏС‚ РѕС‚ РїРѕРІРѕСЂРѕС‚Р° РєР°РјРµСЂС‹)
+        local headPart = character:FindFirstChild("Head") or rootPart
+        local headPos3D = headPart.Position + Vector3.new(0, headPart.Size.Y * 0.5, 0)
+        local footPos3D = rootPart.Position - Vector3.new(0, 3, 0)
+        local headPos, headOn = Camera:WorldToViewportPoint(headPos3D)
+        local footPos, footOn = Camera:WorldToViewportPoint(footPos3D)
+        local centerPos3D, centerOn = Camera:WorldToViewportPoint(rootPart.Position)
         if headOn and footOn and humanoid.Health > 0 then
-            local boxH = math.abs(headPos.Y - footPos.Y); local boxW = boxH * 0.6
-            local boxX = headPos.X - boxW/2; local boxY = headPos.Y
+            local boxH = math.abs(footPos.Y - headPos.Y)
+            local boxW = boxH * 0.55
+            local boxX = headPos.X - boxW / 2
+            local boxY = headPos.Y
             local rainbow = getRainbowColor(2)
-            if espShowBox then box.Size=Vector2.new(boxW,boxH); box.Position=Vector2.new(boxX,boxY); box.Color=rainbow; box.Visible=true else box.Visible=false end
-            if espShowName then nameLabel.Text=player.Name; nameLabel.Position=Vector2.new(centerPos.X, boxY-16); nameLabel.Color=rainbow; nameLabel.Visible=true else nameLabel.Visible=false end
+            if espShowBox then
+                box.Size = Vector2.new(boxW, boxH)
+                box.Position = Vector2.new(boxX, boxY)
+                box.Color = rainbow; box.Visible = true
+            else box.Visible = false end
+            if espShowName then
+                nameLabel.Text = player.Name
+                nameLabel.Position = Vector2.new(headPos.X, boxY - 18)
+                nameLabel.Color = rainbow; nameLabel.Visible = true
+            else nameLabel.Visible = false end
             if espShowDist then
-                local d = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and math.floor((rootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude) or "?"
-                distLabel.Text = tostring(d) .. " studs"; distLabel.Position=Vector2.new(centerPos.X, boxY+boxH+4); distLabel.Color=rainbow; distLabel.Visible=true
-            else distLabel.Visible=false end
+                local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+                local d = myRoot and math.floor((rootPart.Position - myRoot.Position).Magnitude) or "?"
+                distLabel.Text = tostring(d) .. " studs"
+                distLabel.Position = Vector2.new(headPos.X, boxY + boxH + 4)
+                distLabel.Color = rainbow; distLabel.Visible = true
+            else distLabel.Visible = false end
             if espShowHP then
-                local hpH = boxH * (humanoid.Health / humanoid.MaxHealth)
-                hpBg.Size=Vector2.new(3,boxH); hpBg.Position=Vector2.new(boxX-6,boxY); hpBg.Visible=true
-                hpBar.Size=Vector2.new(3,hpH); hpBar.Position=Vector2.new(boxX-6, boxY+(boxH-hpH)); hpBar.Visible=true
-            else hpBg.Visible=false; hpBar.Visible=false end
+                local hpRatio = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+                local hpH = boxH * hpRatio
+                local hpColor = Color3.fromRGB(
+                    math.floor(255 * (1 - hpRatio)),
+                    math.floor(255 * hpRatio), 0
+                )
+                hpBg.Size = Vector2.new(4, boxH)
+                hpBg.Position = Vector2.new(boxX - 7, boxY)
+                hpBg.Visible = true
+                hpBar.Size = Vector2.new(4, hpH)
+                hpBar.Position = Vector2.new(boxX - 7, boxY + (boxH - hpH))
+                hpBar.Color = hpColor; hpBar.Visible = true
+            else hpBg.Visible = false; hpBar.Visible = false end
             if espShowTracer then
                 local isVis = checkVisibility(character)
-                tracer.Color = isVis and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
-                tracer.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+                tracer.Color = isVis and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(255, 50, 50)
+                tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                 tracer.To = Vector2.new(headPos.X, headPos.Y)
                 tracer.Visible = true
             else tracer.Visible = false end
@@ -1529,7 +1573,7 @@ Players.PlayerAdded:Connect(function(player) if espEnabled and hasDrawing then c
 for _,player in ipairs(Players:GetPlayers()) do if espEnabled and hasDrawing and player ~= LP then createESP(player) end end
 
 -- ================================================================
---  АИМБОТ (круг не скрывается при закрытии GUI)
+--  РђРРњР‘РћРў (РєСЂСѓРі РЅРµ СЃРєСЂС‹РІР°РµС‚СЃСЏ РїСЂРё Р·Р°РєСЂС‹С‚РёРё GUI)
 -- ================================================================
 local function getTargetPart(character)
     if targetPart == "Head" then return character:FindFirstChild("Head")
@@ -1556,7 +1600,7 @@ end
 
 local aimbotCircle = nil
 RunService.RenderStepped:Connect(function()
-    -- Круг видим независимо от visible
+    -- РљСЂСѓРі РІРёРґРёРј РЅРµР·Р°РІРёСЃРёРјРѕ РѕС‚ visible
     if aimbotCircleEnabled and hasDrawing then
         if not aimbotCircle then
             aimbotCircle = Drawing.new("Circle")
@@ -1639,7 +1683,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================================
---  ФУНКЦИОНАЛЬНЫЙ ПОИСК
+--  Р¤РЈРќРљР¦РРћРќРђР›Р¬РќР«Р™ РџРћРРЎРљ
 -- ================================================================
 SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
     local query = SearchBox.Text:lower()
@@ -1664,7 +1708,7 @@ SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 -- ================================================================
---  MISC ЛОГИКА (Inf Jump)
+--  MISC Р›РћР“РРљРђ (Inf Jump)
 -- ================================================================
 LP.CharacterAdded:Connect(function(char)
     task.wait(0.5)
@@ -1704,7 +1748,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ================================================================
---  МОБИЛЬНАЯ КНОПКА ОТКРЫТИЯ GUI
+--  РњРћР‘РР›Р¬РќРђРЇ РљРќРћРџРљРђ РћРўРљР Р«РўРРЇ GUI
 -- ================================================================
 if isMobile() then
     local btnGui = CG:FindFirstChild("SinyxWareMobileButtons")
@@ -1739,26 +1783,26 @@ if isMobile() then
     local function toggleGUI()
         visible = not visible
         Outer.Visible = visible
-        -- Не скрываем кнопки и круг
+        -- РљСЂСѓР¶РѕРє Р°РёРјР±РѕС‚Р°, РјРѕР±РёР»СЊРЅР°СЏ РєРЅРѕРїРєР° Рё РєРЅРѕРїРєР° Р°РёРјР° РќР• СЃРєСЂС‹РІР°СЋС‚СЃСЏ
     end
     mobileButton.MouseButton1Click:Connect(toggleGUI)
     mobileButton.TouchTap:Connect(toggleGUI)
 end
 
 -- ================================================================
---  HIDE / SHOW (ТОЛЬКО GUI, кнопки и круг остаются)
+--  HIDE / SHOW (РўРћР›Р¬РљРћ GUI, РєРЅРѕРїРєРё Рё РєСЂСѓРі РѕСЃС‚Р°СЋС‚СЃСЏ)
 -- ================================================================
 UIS.InputBegan:Connect(function(i, gpe)
     if gpe then return end
     if i.KeyCode == Enum.KeyCode.Insert then
         visible = not visible
         Outer.Visible = visible
-        -- Не трогаем снежную кнопку, мобильную кнопку и круг
+        -- РљСЂСѓР¶РѕРє Р°РёРјР±РѕС‚Р° Рё РєРЅРѕРїРєРё РѕСЃС‚Р°СЋС‚СЃСЏ РІРёРґРёРјС‹РјРё
     end
 end)
 
 setTab("Home")
-print("[SinyxWare v14] ✓ Loaded | Insert = скрыть/показать GUI")
-print("[SinyxWare v14] ✓ Круг и кнопки всегда видимы")
-print("[SinyxWare v14] ✓ Crosshair добавлен")
-print("[SinyxWare v14] ✓ Все исправления применены")
+print("[SinyxWare v14] вњ“ Loaded | Insert = СЃРєСЂС‹С‚СЊ/РїРѕРєР°Р·Р°С‚СЊ GUI")
+print("[SinyxWare v14] вњ“ РљСЂСѓРі Рё РєРЅРѕРїРєРё РІСЃРµРіРґР° РІРёРґРёРјС‹")
+print("[SinyxWare v14] вњ“ Crosshair РґРѕР±Р°РІР»РµРЅ")
+print("[SinyxWare v14] вњ“ Р’СЃРµ РёСЃРїСЂР°РІР»РµРЅРёСЏ РїСЂРёРјРµРЅРµРЅС‹")
