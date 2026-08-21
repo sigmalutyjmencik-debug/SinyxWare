@@ -272,50 +272,225 @@ local function mkSlider(parent, label, mn, mx, def, callback)
     return wrap, function() return val end
 end
 
+-- Р“Р»РѕР±Р°Р»СЊРЅС‹Р№ С†РІРµС‚РѕРїРёРєРµСЂ GUI (РѕРґРёРЅ РЅР° РІРµСЃСЊ СЃРєСЂРёРїС‚)
+local colorPickerGui = nil
+local colorPickerCallback = nil
+local colorPickerPreview = nil
+
+local function openColorPicker(previewBtn, cb)
+    colorPickerCallback = cb
+    colorPickerPreview = previewBtn
+    if colorPickerGui then colorPickerGui:Destroy() end
+
+    local pg = LP:FindFirstChildOfClass("PlayerGui")
+    if not pg then return end
+    colorPickerGui = Instance.new("ScreenGui")
+    colorPickerGui.Name = "SW_ColorPicker"
+    colorPickerGui.ResetOnSpawn = false
+    colorPickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    colorPickerGui.DisplayOrder = 9999
+    colorPickerGui.Parent = pg
+
+    -- Р—Р°С‚РµРјРЅС‘РЅРЅС‹Р№ С„РѕРЅ
+    local overlay = Instance.new("TextButton", colorPickerGui)
+    overlay.Size = UDim2.new(1,0,1,0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    overlay.BackgroundTransparency = 0.5
+    overlay.BorderSizePixel = 0
+    overlay.Text = ""
+    overlay.AutoButtonColor = false
+    overlay.ZIndex = 1
+    overlay.MouseButton1Click:Connect(function()
+        colorPickerGui:Destroy(); colorPickerGui = nil
+    end)
+
+    -- РћРєРЅРѕ РїРёРєРµСЂР°
+    local win = Instance.new("Frame", colorPickerGui)
+    win.Size = UDim2.new(0, 200, 0, 240)
+    win.Position = UDim2.new(0.5, -100, 0.5, -120)
+    win.BackgroundColor3 = Color3.fromRGB(35, 18, 30)
+    win.BorderSizePixel = 0
+    win.ZIndex = 2
+    corner(win, 8)
+    local wg = Instance.new("UIGradient", win)
+    wg.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 22, 42)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 12, 22)),
+    })
+    wg.Rotation = 135
+
+    local titleL = Instance.new("TextLabel", win)
+    titleL.Size = UDim2.new(1,0,0,26)
+    titleL.BackgroundTransparency = 1
+    titleL.Text = "Pick Color"
+    titleL.TextColor3 = Color3.fromRGB(255,130,210)
+    titleL.Font = Enum.Font.GothamBold
+    titleL.TextSize = 11
+    titleL.ZIndex = 3
+
+    local closeBtn = Instance.new("TextButton", win)
+    closeBtn.Size = UDim2.new(0,20,0,20)
+    closeBtn.Position = UDim2.new(1,-24,0,3)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(180,30,70)
+    closeBtn.Text = "вњ•"
+    closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.TextSize = 10
+    closeBtn.BorderSizePixel = 0
+    closeBtn.ZIndex = 4
+    corner(closeBtn, 4)
+    closeBtn.MouseButton1Click:Connect(function()
+        colorPickerGui:Destroy(); colorPickerGui = nil
+    end)
+
+    -- РџР°Р»РёС‚СЂР° С†РІРµС‚РѕРІ (6x8 = 48 С†РІРµС‚РѕРІ)
+    local palette = Instance.new("Frame", win)
+    palette.Size = UDim2.new(1,-16,0,130)
+    palette.Position = UDim2.new(0,8,0,30)
+    palette.BackgroundTransparency = 1
+    palette.ZIndex = 3
+
+    local COLORS = {
+        -- Reds
+        Color3.fromRGB(255,0,0), Color3.fromRGB(220,50,50), Color3.fromRGB(255,80,80),
+        Color3.fromRGB(180,0,0), Color3.fromRGB(255,120,120), Color3.fromRGB(140,0,0),
+        -- Pinks
+        Color3.fromRGB(255,0,150), Color3.fromRGB(255,60,180), Color3.fromRGB(220,50,120),
+        Color3.fromRGB(255,130,200), Color3.fromRGB(200,0,100), Color3.fromRGB(255,180,220),
+        -- Purples
+        Color3.fromRGB(150,0,255), Color3.fromRGB(180,50,255), Color3.fromRGB(100,0,200),
+        Color3.fromRGB(200,100,255), Color3.fromRGB(80,0,160), Color3.fromRGB(220,160,255),
+        -- Blues
+        Color3.fromRGB(0,100,255), Color3.fromRGB(50,150,255), Color3.fromRGB(0,50,200),
+        Color3.fromRGB(100,180,255), Color3.fromRGB(0,200,255), Color3.fromRGB(150,220,255),
+        -- Greens
+        Color3.fromRGB(0,255,0), Color3.fromRGB(50,220,50), Color3.fromRGB(0,180,0),
+        Color3.fromRGB(100,255,100), Color3.fromRGB(0,255,150), Color3.fromRGB(150,255,200),
+        -- Yellows/Orange
+        Color3.fromRGB(255,255,0), Color3.fromRGB(255,200,0), Color3.fromRGB(255,150,0),
+        Color3.fromRGB(255,100,0), Color3.fromRGB(255,220,100), Color3.fromRGB(200,150,0),
+        -- Whites/Grays
+        Color3.fromRGB(255,255,255), Color3.fromRGB(200,200,200), Color3.fromRGB(150,150,150),
+        Color3.fromRGB(100,100,100), Color3.fromRGB(50,50,50), Color3.fromRGB(0,0,0),
+        -- Neons
+        Color3.fromRGB(255,0,255), Color3.fromRGB(0,255,255), Color3.fromRGB(255,255,0),
+        Color3.fromRGB(128,255,0), Color3.fromRGB(0,128,255), Color3.fromRGB(255,128,0),
+    }
+
+    local COLS = 6
+    local btnSz = (palette.Size.X.Offset or 184) / COLS
+    for i, col in ipairs(COLORS) do
+        local row = math.floor((i-1) / COLS)
+        local c   = (i-1) % COLS
+        local btn = Instance.new("TextButton", palette)
+        btn.Size = UDim2.new(0, 28, 0, 16)
+        btn.Position = UDim2.new(0, c*31, 0, row*18)
+        btn.BackgroundColor3 = col
+        btn.BorderSizePixel = 0
+        btn.Text = ""
+        btn.AutoButtonColor = false
+        btn.ZIndex = 4
+        corner(btn, 2)
+        btn.MouseButton1Click:Connect(function()
+            if colorPickerPreview then
+                colorPickerPreview.BackgroundColor3 = col
+            end
+            if colorPickerCallback then colorPickerCallback(col) end
+            colorPickerGui:Destroy(); colorPickerGui = nil
+        end)
+    end
+
+    -- RGB input
+    local rgbLabel = Instance.new("TextLabel", win)
+    rgbLabel.Size = UDim2.new(1,-16,0,14)
+    rgbLabel.Position = UDim2.new(0,8,0,168)
+    rgbLabel.BackgroundTransparency = 1
+    rgbLabel.Text = "Custom RGB:"
+    rgbLabel.TextColor3 = Color3.fromRGB(180,140,170)
+    rgbLabel.Font = Enum.Font.Gotham
+    rgbLabel.TextSize = 8
+    rgbLabel.TextXAlignment = Enum.TextXAlignment.Left
+    rgbLabel.ZIndex = 3
+
+    local rgbBox = Instance.new("TextBox", win)
+    rgbBox.Size = UDim2.new(1,-16,0,22)
+    rgbBox.Position = UDim2.new(0,8,0,184)
+    rgbBox.BackgroundColor3 = Color3.fromRGB(45,22,38)
+    rgbBox.Text = ""
+    rgbBox.PlaceholderText = "R, G, B (0-255)"
+    rgbBox.PlaceholderColor3 = Color3.fromRGB(120,80,110)
+    rgbBox.TextColor3 = Color3.fromRGB(220,200,215)
+    rgbBox.Font = Enum.Font.Gotham
+    rgbBox.TextSize = 8
+    rgbBox.BorderSizePixel = 0
+    rgbBox.ZIndex = 4
+    corner(rgbBox, 4)
+
+    local applyBtn = Instance.new("TextButton", win)
+    applyBtn.Size = UDim2.new(1,-16,0,22)
+    applyBtn.Position = UDim2.new(0,8,0,210)
+    applyBtn.BackgroundColor3 = Color3.fromRGB(200,50,120)
+    applyBtn.Text = "Apply"
+    applyBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    applyBtn.Font = Enum.Font.GothamBold
+    applyBtn.TextSize = 9
+    applyBtn.BorderSizePixel = 0
+    applyBtn.ZIndex = 4
+    corner(applyBtn, 4)
+    local apg = Instance.new("UIGradient", applyBtn)
+    apg.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255,100,180)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(160,30,90)),
+    })
+    applyBtn.MouseButton1Click:Connect(function()
+        local r,g,b = rgbBox.Text:match("(%d+)%D+(%d+)%D+(%d+)")
+        if r then
+            local col = Color3.fromRGB(
+                math.clamp(tonumber(r),0,255),
+                math.clamp(tonumber(g),0,255),
+                math.clamp(tonumber(b),0,255)
+            )
+            if colorPickerPreview then colorPickerPreview.BackgroundColor3 = col end
+            if colorPickerCallback then colorPickerCallback(col) end
+            colorPickerGui:Destroy(); colorPickerGui = nil
+        end
+    end)
+end
+
 local function mkColorPicker(parent, label, defaultColor, callback)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 20)
     wrap.BackgroundTransparency = 1
+
     local lbl = Instance.new("TextLabel", wrap)
-    lbl.Size = UDim2.new(0.5, 0, 1, 0)
-    lbl.Position = UDim2.new(0, 0, 0, 0)
+    lbl.Size = UDim2.new(0.55, 0, 1, 0)
     lbl.BackgroundTransparency = 1
     lbl.Text = label
     lbl.TextColor3 = C.text
     lbl.Font = Enum.Font.Gotham
     lbl.TextSize = 7
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Position = UDim2.new(0,5,0,0)
+
     local colorBtn = Instance.new("TextButton", wrap)
-    colorBtn.Size = UDim2.new(0, 20, 0, 16)
-    colorBtn.Position = UDim2.new(0.5, 5, 0.5, -8)
+    colorBtn.Size = UDim2.new(0, 40, 0, 14)
+    colorBtn.Position = UDim2.new(1, -44, 0.5, -7)
     colorBtn.BackgroundColor3 = defaultColor
     colorBtn.BorderSizePixel = 0
-    corner(colorBtn, 2)
-    colorBtn.Text = ""
+    colorBtn.Text = "в—Џ"
+    colorBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    colorBtn.TextSize = 8
+    colorBtn.Font = Enum.Font.GothamBold
     colorBtn.AutoButtonColor = false
-    local colorBox = Instance.new("TextBox", wrap)
-    colorBox.Size = UDim2.new(0.3, 0, 1, 0)
-    colorBox.Position = UDim2.new(0.7, 0, 0, 0)
-    colorBox.BackgroundColor3 = C.section
-    colorBox.Text = ""
-    colorBox.PlaceholderText = "RGB"
-    colorBox.PlaceholderColor3 = C.dim
-    colorBox.TextColor3 = C.text
-    colorBox.Font = Enum.Font.Gotham
-    colorBox.TextSize = 7
-    colorBox.BorderSizePixel = 0
-    corner(colorBox, 2)
+    corner(colorBtn, 3)
+
     local currentColor = defaultColor
-    colorBox.FocusLost:Connect(function()
-        local r,g,b = colorBox.Text:match("(%d+),%s*(%d+),%s*(%d+)")
-        if r and g and b then
-            r = math.clamp(tonumber(r),0,255)
-            g = math.clamp(tonumber(g),0,255)
-            b = math.clamp(tonumber(b),0,255)
-            currentColor = Color3.fromRGB(r,g,b)
-            colorBtn.BackgroundColor3 = currentColor
-            if callback then callback(currentColor) end
-        end
+    colorBtn.MouseButton1Click:Connect(function()
+        openColorPicker(colorBtn, function(col)
+            currentColor = col
+            colorBtn.BackgroundColor3 = col
+            if callback then callback(col) end
+        end)
     end)
     return wrap, function() return currentColor end
 end
@@ -772,10 +947,14 @@ local auraEnabled = false
 local skyboxEnabled = false
 local particlesEnabled = false
 local particleMultiplier = 5
+local particleColor = Color3.fromRGB(255,130,200)
 local fogEnabled = false
 local fogDistance = 500
 local pulseEnabled = false
 local pulseSize = 5
+local jumpCircleEnabled = false
+local coobikEnabled = false
+local coobikDelay = 0.6
 local activeEmitters = {}
 local auraCharacter = LP.Character or LP.CharacterAdded:Wait()
 local galaxySkyObj = nil
@@ -786,6 +965,8 @@ local pulseObject = nil
 local crosshairEnabled = false
 local crosshairType = "Cross" -- РёР»Рё "Swastika"
 local crosshairSize = 8
+local crosshairSpin = true
+local crosshairSpinSpeed = 150
 local crosshairGui = nil
 local crosshairConnection = nil
 local createCrosshair, removeCrosshair  -- forward declarations
@@ -1223,13 +1404,30 @@ mkToggle(espSection, "Tracers", true, function(val) espShowTracer = val end)
 
 local visualSection = mkSection(VR, "Effects", 1)
 mkToggle(visualSection, "Player Aura", false, function(val) auraEnabled = val; if val then setupAura() else removeAura() end end)
+mkColorPicker(visualSection, "Aura Color", Color3.fromRGB(148,0,211), function(val)
+    for _,emitter in pairs(activeEmitters) do
+        if emitter and emitter.Parent then
+            emitter.Color = ColorSequence.new(val)
+        end
+    end
+end)
 mkToggle(visualSection, "Pink Skybox", false, function(val) skyboxEnabled = val; if val then applySkybox() else removeSkybox() end end)
 mkToggle(visualSection, "Custom Fog", false, function(val) fogEnabled = val; if val then applyFog() else removeFog() end end)
 mkSlider(visualSection, "Fog Distance", 100, 10000, 500, function(val) fogDistance = val; if fogEnabled then applyFog() end end)
 mkToggle(visualSection, "Pulse Effect", false, function(val) pulseEnabled = val; if val then createPulse() else removePulse() end end)
+mkColorPicker(visualSection, "Pulse Color", Color3.fromRGB(255,100,200), function(val)
+    if pulseObject and pulseObject.Parent then pulseObject.Color = val end
+end)
 mkSlider(visualSection, "Pulse Size", 1, 30, 5, function(val) pulseSize = val; updatePulse() end)
 mkToggle(visualSection, "Particles", false, function(val) particlesEnabled = val end)
+mkColorPicker(visualSection, "Particle Color", Color3.fromRGB(255,130,200), function(val)
+    -- Р¦РІРµС‚ РїСЂРёРјРµРЅСЏРµС‚СЃСЏ РїСЂРё СЃР»РµРґСѓСЋС‰РµРј СЃРїР°РІРЅРµ С‡РµСЂРµР· РіР»РѕР±Р°Р»СЊРЅСѓСЋ РїРµСЂРµРјРµРЅРЅСѓСЋ
+    particleColor = val
+end)
 mkSlider(visualSection, "Spawn Multiplier", 1, 10, 5, function(val) particleMultiplier = val end)
+mkToggle(visualSection, "Jump Circle", false, function(val) jumpCircleEnabled = val end)
+mkToggle(visualSection, "Coobik", false, function(val) coobikEnabled = val end)
+mkSlider(visualSection, "Coobik CD (x10ms)", 1, 20, 6, function(val) coobikDelay = val * 0.1 end)
 
 -- ================================================================
 --  MISC (РґРѕР±Р°РІР»РµРЅ Crosshair)
@@ -1272,6 +1470,57 @@ mkToggle(moveSection, "No Clip", false, function(val)
     end
 end)
 
+local winHubSection = mkSection(ML, "Win Hub Jump", 3)
+local winHubEnabled = false
+local winHubHeight = 5
+local winHubSpeed = 50
+local winHubConnection = nil
+
+local function stopWinHub()
+    if winHubConnection then
+        winHubConnection:Disconnect()
+        winHubConnection = nil
+    end
+end
+
+local function startWinHub()
+    stopWinHub()
+    local hasBoosted = false
+    winHubConnection = RunService.Heartbeat:Connect(function()
+        if not winHubEnabled then stopWinHub() return end
+        local char = LP.Character
+        if not char then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not hum or not root or hum.Health <= 0 then return end
+        if hum.FloorMaterial == Enum.Material.Air then
+            if not hasBoosted then
+                root.CFrame = root.CFrame * CFrame.new(0, winHubHeight, 0)
+                hum.WalkSpeed = winHubSpeed
+                hasBoosted = true
+            end
+            local vel = root.AssemblyLinearVelocity
+            root.AssemblyLinearVelocity = Vector3.new(vel.X, -3, vel.Z)
+        else
+            if hasBoosted then
+                hum.WalkSpeed = 16
+                hasBoosted = false
+            end
+        end
+    end)
+end
+
+mkToggle(winHubSection, "Enable Win Hub Jump", false, function(val)
+    winHubEnabled = val
+    if val then startWinHub() else stopWinHub() end
+end)
+mkSlider(winHubSection, "Jump Height (studs)", 1, 7, 5, function(val)
+    winHubHeight = val
+end)
+mkSlider(winHubSection, "Air Speed", 10, 200, 50, function(val)
+    winHubSpeed = val
+end)
+
 -- Crosshair СЃРµРєС†РёСЏ
 local crosshairSection = mkSection(ML, "Crosshair", 2)
 mkToggle(crosshairSection, "Enable Crosshair", false, function(val)
@@ -1285,6 +1534,12 @@ end)
 mkSlider(crosshairSection, "Size", 4, 20, 8, function(val)
     crosshairSize = val
     if crosshairEnabled then createCrosshair() end
+end)
+mkToggle(crosshairSection, "Spin", true, function(val)
+    crosshairSpin = val
+end)
+mkSlider(crosshairSection, "Spin Speed", 10, 500, 150, function(val)
+    crosshairSpinSpeed = val
 end)
 
 -- ================================================================
@@ -1349,9 +1604,11 @@ createCrosshair = function()
             crosshairConnection:Disconnect()
             return
         end
-        currentRotation = currentRotation + (150 * deltaTime)
-        if currentRotation >= 360 then currentRotation = currentRotation - 360 end
-        MainAnchor.Rotation = currentRotation
+        if crosshairSpin then
+            currentRotation = currentRotation + (crosshairSpinSpeed * deltaTime)
+            if currentRotation >= 360 then currentRotation = currentRotation - 360 end
+            MainAnchor.Rotation = currentRotation
+        end
         hue = hue + (0.1 * deltaTime)
         if hue > 1 then hue = hue - 1 end
         local col = Color3.fromHSV(hue, 1, 1)
@@ -1801,8 +2058,118 @@ UIS.InputBegan:Connect(function(i, gpe)
     end
 end)
 
+-- ================================================================
+--  JUMP CIRCLE
+-- ================================================================
+local jumpCircleFolder = workspace:FindFirstChild("PureRingEffects")
+if not jumpCircleFolder then
+    jumpCircleFolder = Instance.new("Folder")
+    jumpCircleFolder.Name = "PureRingEffects"
+    jumpCircleFolder.Parent = workspace
+end
+
+local jcGlobalHue = 0
+local jcHasBounced = false
+
+RunService.Heartbeat:Connect(function(dt)
+    jcGlobalHue = jcGlobalHue + 0.6 * dt
+    if jcGlobalHue > 1 then jcGlobalHue = jcGlobalHue - 1 end
+    if not jumpCircleEnabled then return end
+    local char = LP.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not hum or not root or hum.Health <= 0 then return end
+    if hum.FloorMaterial == Enum.Material.Air then
+        if not jcHasBounced then
+            jcHasBounced = true
+            -- РЎРїР°РІРЅРёРј РєРѕР»СЊС†Рѕ
+            local rp = RaycastParams.new()
+            rp.FilterDescendantsInstances = {char, jumpCircleFolder}
+            rp.FilterType = Enum.RaycastFilterType.Exclude
+            local res = workspace:Raycast(root.Position, Vector3.new(0,-6,0), rp)
+            local pos = res and res.Position + Vector3.new(0,0.05,0) or root.Position - Vector3.new(0,3,0)
+
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(1,1,1)
+            part.CFrame = CFrame.new(pos) * CFrame.Angles(math.rad(90),0,0)
+            part.Material = Enum.Material.Neon
+            part.Color = Color3.fromHSV(jcGlobalHue,1,1)
+            part.Transparency = 0.1
+            part.Anchored = true
+            part.CanCollide = false
+            part.CastShadow = false
+            part.Parent = jumpCircleFolder
+
+            local mesh = Instance.new("SpecialMesh", part)
+            mesh.MeshType = Enum.MeshType.FileMesh
+            mesh.MeshId = "rbxassetid://3270017"
+            mesh.Scale = Vector3.new(5,5,0.2)
+
+            local FRAMES = 30
+            task.spawn(function()
+                for i = 1, FRAMES do
+                    if not part.Parent then break end
+                    local prog = i / FRAMES
+                    mesh.Scale = Vector3.new(5*(1-prog), 5*(1-prog), 0.2)
+                    part.Transparency = 0.1 + 0.9 * prog
+                    part.Color = Color3.fromHSV(jcGlobalHue,1,1)
+                    task.wait(1.0 / FRAMES)
+                end
+                if part.Parent then part:Destroy() end
+            end)
+        end
+    else
+        jcHasBounced = false
+    end
+end)
+
+-- ================================================================
+--  COOBIK
+-- ================================================================
+local coobikFolder = workspace:FindFirstChild("BodyCubeEffects")
+if not coobikFolder then
+    coobikFolder = Instance.new("Folder")
+    coobikFolder.Name = "BodyCubeEffects"
+    coobikFolder.Parent = workspace
+end
+
+task.spawn(function()
+    local lastSpawn = 0
+    while true do
+        task.wait(0.05)
+        if coobikEnabled then
+            local now = tick()
+            if now - lastSpawn >= coobikDelay then
+                lastSpawn = now
+                local char = LP.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    local root = char:FindFirstChild("HumanoidRootPart")
+                    if hum and root and hum.Health > 0 then
+                        local cube = Instance.new("Part")
+                        cube.Shape = Enum.PartType.Block
+                        cube.Size = Vector3.new(1,1,1)
+                        cube.CFrame = root.CFrame
+                        cube.Material = Enum.Material.Neon
+                        cube.Color = Color3.fromRGB(255,255,255)
+                        cube.Transparency = 0.3
+                        cube.Anchored = true
+                        cube.CanCollide = false
+                        cube.CastShadow = false
+                        cube.Parent = coobikFolder
+                        task.delay(0.6, function()
+                            if cube and cube.Parent then cube:Destroy() end
+                        end)
+                    end
+                end
+            end
+        end
+    end
+end)
+
 setTab("Home")
-print("[SinyxWare v14] вњ“ Loaded | Insert = СЃРєСЂС‹С‚СЊ/РїРѕРєР°Р·Р°С‚СЊ GUI")
+print("[SinyxWare v15] вњ“ Loaded | Insert = СЃРєСЂС‹С‚СЊ/РїРѕРєР°Р·Р°С‚СЊ GUI")
 print("[SinyxWare v14] вњ“ РљСЂСѓРі Рё РєРЅРѕРїРєРё РІСЃРµРіРґР° РІРёРґРёРјС‹")
 print("[SinyxWare v14] вњ“ Crosshair РґРѕР±Р°РІР»РµРЅ")
 print("[SinyxWare v14] вњ“ Р’СЃРµ РёСЃРїСЂР°РІР»РµРЅРёСЏ РїСЂРёРјРµРЅРµРЅС‹")
